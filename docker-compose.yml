@@ -24,6 +24,10 @@ services:
     container_name: streamlit_app
     ports:
       - "8501:8501"
+    environment:
+      - NEO4J_URI=bolt://neo4j:7687  # Use the Neo4j service name as the host
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=password
     volumes:
       - ./streamlit_app:/app  # Bind mount for live code updates
     depends_on:
