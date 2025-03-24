@@ -1,0 +1,7 @@
+__pycache__/
+.venv
+.python-version
+pyproject.toml
+uv.lock
+Dockerfile
+docker-compose.yml

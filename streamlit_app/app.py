@@ -10,10 +10,7 @@ from functions import (
     view_application_graphs,
     view_neo4j_context_graph
 )
-from models.youtube_content_search import (
-    YouTubeContentSearch, 
-    YouTubeChatbot
-)
+
 
 st.set_page_config(
     page_title = "YouTube Content Search",
@@ -148,6 +145,18 @@ if submit_project_settings:
         st.session_state["context_to_search"] = context_to_search
         st.session_state["max_results"] = max_results
         st.session_state["playlist_url"] = playlist_url
+    try:
+        test = requests.put(
+            "http://fastapi:8000/agents_config",
+            json = {
+                "framework": st.session_state["framework"],
+                "temperature_filter": st.session_state["temperature_filter"],
+                "model_name": st.session_state["model_name"],
+            })
+        test.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        st.error(err)
+    st.stop()
     st.session_state["youtube_content_search_agent"] = YouTubeContentSearch(
         st.session_state["framework"],
         st.session_state["temperature_filter"], 

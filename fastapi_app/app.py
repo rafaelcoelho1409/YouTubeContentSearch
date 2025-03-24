@@ -1,7 +1,22 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+import streamlit as st
+from models.youtube_content_search import YouTubeContentSearch
 #------------------------------------------------
-
+#if requests.get("http://fastapi:8000/agents_config").json() != {
+#    "framework": None,
+#    "temperature_filter": None,
+#    "model_name": None
+#}:
+#    st.session_state["youtube_content_search_agent"] = YouTubeContentSearch(
+#        requests.get("http://fastapi:8000/agents_config").json()["framework"],
+#        requests.get("http://fastapi:8000/agents_config").json()["temperature_filter"],
+#        requests.get("http://fastapi:8000/agents_config").json()["model_name"],
+#        st.session_state["shared_memory"]
+#    )
+#------------------------------------------------
 app = FastAPI()
+
 
 @app.get("/settings/frameworks")
 def get_framework():
@@ -128,3 +143,32 @@ def get_search_duration():
         "View count",
         "Rating"
     ]
+
+class AgentsConfig(BaseModel):
+    framework: str | None
+    temperature_filter: float | None
+    model_name: str | None
+
+agents_config = AgentsConfig(
+    framework = None,
+    temperature_filter = None,
+    model_name = None)
+
+@app.get("/agents_config", response_model = AgentsConfig)
+def get_agents_config():
+    return agents_config
+
+@app.put("/agents_config", response_model = AgentsConfig)
+def update_agents_config(config: AgentsConfig):
+    agents_config.framework = config.framework
+    agents_config.temperature_filter = config.temperature_filter
+    agents_config.model_name = config.model_name
+    return agents_config
+
+#@app.get("/youtube_content_search")
+#def load_model():
+#    model = YouTubeContentSearch(
+#        agents_config.framework,
+#        agents_config.temperature_filter,
+#        agents_config.model_name)
+#    return "Model loaded with success"

@@ -1,13 +1,14 @@
+from fastapi import FastAPI, Depends
+from typing import List
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
 import streamlit as st
 import stqdm
 import os
 import uuid
 import re
 import pandas as pd
-from dotenv import load_dotenv
-from typing import List
-from typing_extensions import TypedDict
-from pydantic import BaseModel, Field
+import requests
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
@@ -33,11 +34,10 @@ from langchain_core.runnables import (
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain.text_splitter import TokenTextSplitter
 from langgraph.graph import END, StateGraph, START
+from langgraph.checkpoint.memory import MemorySaver
 from neo4j import GraphDatabase
 from pytubefix import YouTube, Channel, Playlist
 from pytubefix.contrib.search import Search, Filter
-
-load_dotenv()
 #------------------------------------------------
 ###STRUCTURES
 class SearchQuery(BaseModel):
@@ -73,10 +73,14 @@ class State(TypedDict):
     search_results: List
     unique_videos: List
 #------------------------------------------------
-
 class YouTubeContentSearch:
-    def __init__(self, framework, temperature_filter, model_name, shared_memory):
-        self.shared_memory = shared_memory
+    def __init__(self, framework, temperature_filter, model_name, shared_memory = None):
+        if shared_memory != None:
+            self.shared_memory = shared_memory
+        elif "shared_memory" not in st.session_state:
+            self.shared_memory = MemorySaver()
+        else:
+            self.shared_memory = st.session_state["shared_memory"]
         self.config = {
             "configurable": {"thread_id": "1"},
             "callbacks": [StreamlitCallbackHandler(st.container())]}
