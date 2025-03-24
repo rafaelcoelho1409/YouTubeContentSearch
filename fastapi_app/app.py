@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import streamlit as st
+import requests
+import os
 from models.youtube_content_search import YouTubeContentSearch
 #------------------------------------------------
 #if requests.get("http://fastapi:8000/agents_config").json() != {
@@ -148,27 +150,33 @@ class AgentsConfig(BaseModel):
     framework: str | None
     temperature_filter: float | None
     model_name: str | None
+    api_key: dict | None
 
 agents_config = AgentsConfig(
     framework = None,
     temperature_filter = None,
-    model_name = None)
+    model_name = None,
+    api_key = {"api_key": None})
 
-@app.get("/agents_config", response_model = AgentsConfig)
+@app.get("/agents_config", response_model = AgentsConfig, response_model_exclude = {"api_key"})
 def get_agents_config():
     return agents_config
 
-@app.put("/agents_config", response_model = AgentsConfig)
+@app.put("/agents_config", response_model = AgentsConfig, response_model_exclude = {"api_key"})
 def update_agents_config(config: AgentsConfig):
     agents_config.framework = config.framework
     agents_config.temperature_filter = config.temperature_filter
     agents_config.model_name = config.model_name
+    agents_config.api_key = config.api_key
     return agents_config
 
-#@app.get("/youtube_content_search")
-#def load_model():
-#    model = YouTubeContentSearch(
-#        agents_config.framework,
-#        agents_config.temperature_filter,
-#        agents_config.model_name)
-#    return "Model loaded with success"
+@app.get("/youtube_content_search")
+def load_model():
+    for key, value in agents_config.api_key["api_key"].items():
+        os.environ[key] = value
+    model = YouTubeContentSearch(
+        agents_config.framework,
+        agents_config.temperature_filter,
+        agents_config.model_name
+        )
+    return "Model loaded with success."
