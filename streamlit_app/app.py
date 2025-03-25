@@ -178,9 +178,10 @@ if submit_project_settings:
     )
     events = requests.post(
         "http://fastapi:8000/youtube_content_search/context_to_search",
-        json = context_to_search
+        json = {"context_to_search": context_to_search}
     )
-    st.write(events)
+    st.write(events.content)
+    st.stop()
     st.session_state["snapshot"] = st.session_state["youtube_content_search_agent"].graph.get_state(
         st.session_state["youtube_content_search_agent"].config)
 

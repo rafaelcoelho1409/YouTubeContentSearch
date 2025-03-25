@@ -1,21 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import streamlit as st
 import requests
 import os
+import json
+from langgraph.checkpoint.memory import MemorySaver
 from models.youtube_content_search import YouTubeContentSearch
-#------------------------------------------------
-#if requests.get("http://fastapi:8000/agents_config").json() != {
-#    "framework": None,
-#    "temperature_filter": None,
-#    "model_name": None
-#}:
-#    st.session_state["youtube_content_search_agent"] = YouTubeContentSearch(
-#        requests.get("http://fastapi:8000/agents_config").json()["framework"],
-#        requests.get("http://fastapi:8000/agents_config").json()["temperature_filter"],
-#        requests.get("http://fastapi:8000/agents_config").json()["model_name"],
-#        st.session_state["shared_memory"]
-#    )
+
 #------------------------------------------------
 app = FastAPI()
 
@@ -174,17 +166,21 @@ def update_agents_config(config: AgentsConfig):
 def load_model(settings: dict):
     for key, value in agents_config.api_key["api_key"].items():
         os.environ[key] = value
-    global agent
+    global agent, shared_memory
+    shared_memory = MemorySaver()
     agent = YouTubeContentSearch(
         agents_config.framework,
         agents_config.temperature_filter,
-        agents_config.model_name
+        agents_config.model_name,
+        shared_memory
         )
     agent.load_model(**settings)
     return "Model loaded with success."
 
+class SearchRequest(BaseModel):
+    context_to_search: str
 
 @app.post("/youtube_content_search/context_to_search")
-def context_to_search(context_to_search: str):
-    events = agent.stream_graph_updates(context_to_search)
+def get_context_to_search(request: SearchRequest):
+    events = agent.stream_graph_updates(request.context_to_search)
     return events

@@ -75,12 +75,7 @@ class State(TypedDict):
 #------------------------------------------------
 class YouTubeContentSearch:
     def __init__(self, framework, temperature_filter, model_name, shared_memory = None):
-        if shared_memory != None:
-            self.shared_memory = shared_memory
-        elif "shared_memory" not in st.session_state:
-            self.shared_memory = MemorySaver()
-        else:
-            self.shared_memory = st.session_state["shared_memory"]
+        self.shared_memory = shared_memory
         self.config = {
             "configurable": {"thread_id": "1"},
             "callbacks": [StreamlitCallbackHandler(st.container())]}
@@ -160,7 +155,7 @@ class YouTubeContentSearch:
         self.workflow.add_edge("set_knowledge_graph", "final_step")
         self.workflow.add_edge("final_step", END)
         self.graph = self.workflow.compile(
-            checkpointer = st.session_state["shared_memory"],#self.shared_memory
+            checkpointer = self.shared_memory
         )
     
     ###AGENTS
