@@ -8,6 +8,8 @@ uv.lock
 pyproject.toml
 .python-version
 .env
+neo4j/conf
+neo4j/plugins
 
 # Virtual environments
 .venv

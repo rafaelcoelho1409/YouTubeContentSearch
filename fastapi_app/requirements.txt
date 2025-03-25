@@ -6,7 +6,6 @@ streamlit
 streamlit_extras
 ollama
 langgraph
-langsmith
 langchain
 langchain_ollama
 langchain_groq
@@ -15,15 +14,10 @@ langchain_google_genai
 langchain_openai
 langchain_community
 langchain_experimental
-langchain_qdrant
-qdrant-client
-sseclient-py
-duckduckgo-search
+langchain_neo4j
 pandas
 bs4
 stqdm
-stackapi
-wikipedia
 youtube-transcript-api
 youtube-search
 pytubefix

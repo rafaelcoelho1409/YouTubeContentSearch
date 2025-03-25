@@ -177,7 +177,7 @@ def settings():
                         type = "password"
                     )
                 api_keys_endpoint_data = {"api_key": {api_keys_dict[st.session_state["framework"]]: globals()[api_keys_dict[st.session_state["framework"]]]}}
-                #os.environ[api_keys_dict[st.session_state["framework"]]] = globals()[api_keys_dict[st.session_state["framework"]]]
+                os.environ[api_keys_dict[st.session_state["framework"]]] = globals()[api_keys_dict[st.session_state["framework"]]]
             elif st.session_state["framework"] == "Scaleway":
                 if "SCW_GENERATIVE_APIs_ENDPOINT" in os.environ:
                     SCW_GENERATIVE_APIs_ENDPOINT = st.text_input(
@@ -223,9 +223,9 @@ def settings():
                         "SCW_GENERATIVE_APIs_ENDPOINT": SCW_GENERATIVE_APIs_ENDPOINT,
                         "SCW_ACCESS_KEY": SCW_ACCESS_KEY,
                         "SCW_SECRET_KEY": SCW_SECRET_KEY}}
-                #os.environ["SCW_GENERATIVE_APIs_ENDPOINT"] = SCW_GENERATIVE_APIs_ENDPOINT
-                #os.environ["SCW_ACCESS_KEY"] = SCW_ACCESS_KEY
-                #os.environ["SCW_SECRET_KEY"] = SCW_SECRET_KEY
+                os.environ["SCW_GENERATIVE_APIs_ENDPOINT"] = SCW_GENERATIVE_APIs_ENDPOINT
+                os.environ["SCW_ACCESS_KEY"] = SCW_ACCESS_KEY
+                os.environ["SCW_SECRET_KEY"] = SCW_SECRET_KEY
             submit_button = st.form_submit_button(
                     label = "Run model",
                     use_container_width = True

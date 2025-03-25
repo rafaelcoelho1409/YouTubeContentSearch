@@ -170,13 +170,21 @@ def update_agents_config(config: AgentsConfig):
     agents_config.api_key = config.api_key
     return agents_config
 
-@app.get("/youtube_content_search")
-def load_model():
+@app.post("/youtube_content_search")
+def load_model(settings: dict):
     for key, value in agents_config.api_key["api_key"].items():
         os.environ[key] = value
-    model = YouTubeContentSearch(
+    global agent
+    agent = YouTubeContentSearch(
         agents_config.framework,
         agents_config.temperature_filter,
         agents_config.model_name
         )
+    agent.load_model(**settings)
     return "Model loaded with success."
+
+
+@app.post("/youtube_content_search/context_to_search")
+def context_to_search(context_to_search: str):
+    events = agent.stream_graph_updates(context_to_search)
+    return events

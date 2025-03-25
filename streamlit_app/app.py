@@ -145,13 +145,6 @@ if submit_project_settings:
         st.session_state["context_to_search"] = context_to_search
         st.session_state["max_results"] = max_results
         st.session_state["playlist_url"] = playlist_url
-    st.stop()
-    st.session_state["youtube_content_search_agent"] = YouTubeContentSearch(
-        st.session_state["framework"],
-        st.session_state["temperature_filter"], 
-        st.session_state["model_name"],
-        st.session_state["shared_memory"]
-    )
     if search_type_filter == "Search":
         kwargs = {
             "max_results": st.session_state["max_results"],
@@ -178,9 +171,16 @@ if submit_project_settings:
             "search_type": search_type_filter,
             "max_results": max_results
         }
-    st.session_state["youtube_content_search_agent"].load_model(**kwargs)
-    st.session_state["youtube_content_search_agent"].stream_graph_updates(
-        context_to_search)
+    #Loading YouTubeContentSearch
+    agent_message = requests.post(
+        "http://fastapi:8000/youtube_content_search",
+        json = kwargs
+    )
+    events = requests.post(
+        "http://fastapi:8000/youtube_content_search/context_to_search",
+        json = context_to_search
+    )
+    st.write(events)
     st.session_state["snapshot"] = st.session_state["youtube_content_search_agent"].graph.get_state(
         st.session_state["youtube_content_search_agent"].config)
 

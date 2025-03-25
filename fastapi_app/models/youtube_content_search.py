@@ -17,7 +17,7 @@ from langchain_openai import ChatOpenAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.chat_models.sambanova import ChatSambaNovaCloud
 from langchain_community.callbacks.streamlit import StreamlitCallbackHandler
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 from langchain_community.vectorstores import Neo4jVector
 from langchain_community.vectorstores.neo4j_vector import remove_lucene_chars
 from langchain_core.prompts import ChatPromptTemplate
@@ -640,20 +640,21 @@ class YouTubeContentSearch:
             self.config, 
             stream_mode = "values"
         )
-        for event in events:
-            actions = event["streamlit_actions"][-1]
-            if actions != []:
-                for action in actions:
-                    st.chat_message(
-                        action[3]
-                    ).expander(
-                        action[2][0], 
-                        expanded = action[2][1]
-                    ).__getattribute__(
-                        action[0]
-                    )(
-                        **action[1]
-                    )
+        #for event in events:
+        #    actions = event["streamlit_actions"][-1]
+        #    if actions != []:
+        #        for action in actions:
+        #            st.chat_message(
+        #                action[3]
+        #            ).expander(
+        #                action[2][0], 
+        #                expanded = action[2][1]
+        #            ).__getattribute__(
+        #                action[0]
+        #            )(
+        #                **action[1]
+        #            )
+        return events
 
 
 
