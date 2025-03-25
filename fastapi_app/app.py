@@ -1,10 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import streamlit as st
 import requests
 import os
 import json
+from langchain_core.prompts import ChatPromptTemplate
+from neo4j import GraphDatabase
 from langgraph.checkpoint.memory import MemorySaver
 from models.youtube_content_search import YouTubeContentSearch
 
@@ -184,3 +186,69 @@ class SearchRequest(BaseModel):
 def get_context_to_search(request: SearchRequest):
     events = agent.stream_graph_updates(request.context_to_search)
     return events
+
+@app.get("/youtube_content_search/clear_neo4j_graph")
+def clear_neo4j_graph():
+    driver = GraphDatabase.driver(
+        os.getenv("NEO4J_URI"), 
+        auth = (
+            os.getenv("NEO4J_USERNAME"), 
+            os.getenv("NEO4J_PASSWORD")
+            )
+        )
+    with driver.session(database = "neo4j") as session:
+        session.run("MATCH (n) DETACH DELETE n")
+    return "All previous Neo4J relationships cleared to avoid context confusion."
+
+class SearchQuery(BaseModel):
+    search_query: str = Field(
+        #"An accurate search query for YouTube videos.",
+        title = "Search Query",
+        description = """
+        Search query for YouTube videos. 
+        Must be only 1 search query at the maximum.
+        You must provide a search query with the best keywords that is accurate and concise.
+        It can be an extense search query if necessary, but it must be only one.
+        Give the best and most accurate search query you can.
+        """,
+        example = "How to make a cake"
+    )
+
+class YoutubeSearchAgentRequest(BaseModel):
+    user_input: str
+
+@app.post("/youtube_content_search/youtube_search_agent")
+def build_youtube_search_agent(question: YoutubeSearchAgentRequest):
+    response = agent.llm.invoke({"user_input": question.user_input})
+    return {"answer": response.content}
+    #for key, value in agents_config.api_key["api_key"].items():
+    #    os.environ[key] = value
+    #try:
+    #    prompt = ChatPromptTemplate.from_messages(
+    #        [
+    #            (
+    #                "system",
+    #                """
+    #                You are a YouTube search agent.\n
+    #                Based on the following prompt:\n\n
+    #                {user_input}\n\n
+    #                You must take this user input and transform it into 
+    #                the most efficient youtube search query you can.\n
+    #                It must be in a string format.\n
+    #                """,
+    #            ),
+    #            ("placeholder", "{messages}"),
+    #        ]
+    #    )
+    #    chain = prompt | agent.llm.with_structured_output(SearchQuery)
+    #    response = chain.invoke({"user_input": request.user_input})
+    #    return response.dict()
+    #except Exception as e:
+    #    raise HTTPException(
+    #        status_code = 500,
+    #        detail = {
+    #            "status": "error",
+    #            "message": str(e),
+    #            "type": type(e).__name__
+    #        }
+    #    )

@@ -172,7 +172,7 @@ if submit_project_settings:
             "max_results": max_results
         }
     #Loading YouTubeContentSearch
-    agent_message = requests.post(
+    agent = requests.post(
         "http://fastapi:8000/youtube_content_search",
         json = kwargs
     )

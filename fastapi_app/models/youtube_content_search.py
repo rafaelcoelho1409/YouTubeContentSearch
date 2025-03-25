@@ -130,7 +130,7 @@ class YouTubeContentSearch:
         self.channel_url = channel_url
         self.playlist_url = playlist_url
         #clearing all previous Neo4J relationships to avoid context confusion
-        self.clear_neo4j_graph()
+        requests.get("http://fastapi:8000/youtube_content_search/clear_neo4j_graph")
         #------------------------------------------------
         self.neo4j_graph = Neo4jGraph()
         self.vector_index = Neo4jVector.from_existing_graph(
@@ -307,17 +307,6 @@ class YouTubeContentSearch:
             buffer.append(HumanMessage(content = human))
             buffer.append(AIMessage(content = ai))
         return buffer
-    
-    def clear_neo4j_graph(self):
-        driver = GraphDatabase.driver(
-            os.getenv("NEO4J_URI"), 
-            auth = (
-                os.getenv("NEO4J_USERNAME"), 
-                os.getenv("NEO4J_PASSWORD")
-                )
-            )
-        with driver.session(database = "neo4j") as session:
-            session.run("MATCH (n) DETACH DELETE n")
 
     #------------------------------------------------
     ###NODES
@@ -327,9 +316,14 @@ class YouTubeContentSearch:
         user_input = state["user_input"]
         streamlit_action = []
         user_input = re.sub(r'[+\-/!":(){}\[\]\^~]', ' ', user_input)
-        youtube_search_query = self.youtube_search_agent.invoke({
-            "user_input": user_input
-        })
+        #youtube_search_query = self.youtube_search_agent.invoke({
+        #    "user_input": user_input
+        #})
+        youtube_search_query = requests.post(
+            "http://fastapi:8000/youtube_content_search/youtube_search_agent",
+            json = {"user_input": user_input}
+        ).json()
+        st.write(youtube_search_query)
         search_query = [youtube_search_query.search_query]
         search_results_dict = {}
         if self.search_type == "Search":
