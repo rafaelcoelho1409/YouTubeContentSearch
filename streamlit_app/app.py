@@ -210,7 +210,7 @@ chatbot_agent = YouTubeChatbot(
     st.session_state["model_name"],
     st.session_state["shared_memory"]
 )
-chatbot_agent.load_model(st.session_state["youtube_content_search_agent"].rag_chain)
+chatbot_agent.load_model()
 
 
 view_app_graph = st.session_state["view_graph_button_container"].button(

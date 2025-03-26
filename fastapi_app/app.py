@@ -377,7 +377,6 @@ def build_rag_chain(request: RAGChainRequest):
             "http://fastapi:8000/youtube_content_search/entity_chain",
             json = {"question": question}
         ).json()
-        print(entities)
         for entity in entities["names"]:
             response = neo4j_graph.query(
                 """CALL db.index.fulltext.queryNodes('entity', $query, {limit:2})

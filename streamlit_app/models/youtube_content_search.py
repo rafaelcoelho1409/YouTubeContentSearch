@@ -131,8 +131,8 @@ class YouTubeContentSearch:
         self.video_url = video_url
         self.channel_url = channel_url
         self.playlist_url = playlist_url
-        ##clearing all previous Neo4J relationships to avoid context confusion
-        #self.clear_neo4j_graph()
+        with st.spinner("Clearing all previous Neo4J relationships to avoid context confusion"):
+            requests.get("http://fastapi:8000/youtube_content_search/clear_neo4j_graph")
         ##------------------------------------------------
         self.neo4j_graph = Neo4jGraph()
         self.vector_index = Neo4jVector.from_existing_graph(
@@ -142,9 +142,6 @@ class YouTubeContentSearch:
             text_node_properties = ["text"],
             embedding_node_property = "embedding"
         )
-        #self.youtube_search_agent = self.build_youtube_search_agent()
-        self.entity_chain = self.build_entity_chain()
-        self.rag_chain = self.build_rag_chain()
         self.llm_transformer = LLMGraphTransformer(llm = self.llm)
         self.workflow = StateGraph(State)
         ###NODES
@@ -159,167 +156,6 @@ class YouTubeContentSearch:
         self.graph = self.workflow.compile(
             checkpointer = st.session_state["shared_memory"],#self.shared_memory
         )
-    
-    ###AGENTS
-    def build_youtube_search_agent(self):
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    """
-                    You are a YouTube search agent.\n
-                    Based on the following prompt:\n\n
-                    {user_input}\n\n
-                    You must take this user input and transform it into 
-                    the most efficient youtube search query you can.\n
-                    It must be in a string format.\n
-                    """,
-                ),
-                ("placeholder", "{messages}"),
-            ]
-        )
-        chain = prompt | self.llm.with_structured_output(SearchQuery)
-        return chain
-    
-    def build_entity_chain(self):
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You are extracting organization and person entities from the text.",
-                ),
-                (
-                    "human",
-                    "Use the given format to extract information from the following "
-                    "input: {question}",
-                ),
-            ]
-        )
-        entity_chain = prompt | self.llm.with_structured_output(Entities)
-        return entity_chain
-    
-    def build_rag_chain(self):
-        # Condense a chat history and follow-up question into a standalone question
-        _template = """
-            Given the following conversation and a follow up question, rephrase 
-            the follow up question to be a standalone question,
-            in its original language.
-            Chat History:
-            {chat_history}
-            Follow Up Input: {question}
-            Standalone question:"""  # noqa: E501
-        CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
-        _search_query = RunnableBranch(
-            # If input includes chat_history, we condense it with the follow-up question
-            (
-                RunnableLambda(lambda x: bool(x.get("chat_history"))).with_config(
-                    run_name = "HasChatHistoryCheck"
-                ),  # Condense follow-up question and chat into a standalone_question
-                RunnablePassthrough.assign(
-                    chat_history = lambda x: self._format_chat_history(x["chat_history"])
-                )
-                | CONDENSE_QUESTION_PROMPT
-                | self.llm#ChatOpenAI(temperature=0)
-                | StrOutputParser(),
-            ),
-            # Else, we have no chat history, so just pass through the question
-            RunnableLambda(lambda x : x["question"]),
-        )
-        template = """Answer the question based only on the following context:
-        {context}
-
-        Question: {question}
-        Use natural language and be concise.
-        Answer:"""
-        prompt = ChatPromptTemplate.from_template(template)
-        chain = (
-            RunnableParallel(
-                {
-                    "context": _search_query | self.retriever,
-                    "question": RunnablePassthrough(),
-                }
-            )
-            | prompt
-            | self.llm
-            | StrOutputParser()
-        )
-        return chain
-
-    #------------------------------------------------
-    ###TOOLS
-    def generate_full_text_query(self, input):
-        """
-        Generate a full-text search query for a given input string.
-
-        This function constructs a query string suitable for a full-text search.
-        It processes the input string by splitting it into words and appending a
-        similarity threshold (~2 changed characters) to each word, then combines
-        them using the AND operator. Useful for mapping entities from user questions
-        to database values, and allows for some misspelings.
-        """
-        full_text_query = ""
-        words = [el for el in remove_lucene_chars(input).split() if el]
-        for word in words[:-1]:
-            full_text_query += f" {word}~2 AND"
-        full_text_query += f" {words[-1]}~2"
-        return full_text_query.strip()
-    
-    # Fulltext index query
-    def structured_retriever(self, question):
-        """
-        Collects the neighborhood of entities mentioned
-        in the question
-        """
-        result = ""
-        entities = self.entity_chain.invoke({"question": question})
-        for entity in entities.names:
-            response = self.neo4j_graph.query(
-                """CALL db.index.fulltext.queryNodes('entity', $query, {limit:2})
-                YIELD node,score
-                CALL {
-                  WITH node
-                  MATCH (node)-[r:!MENTIONS]->(neighbor)
-                  RETURN node.id + ' - ' + type(r) + ' -> ' + neighbor.id AS output
-                  UNION ALL
-                  WITH node
-                  MATCH (node)<-[r:!MENTIONS]-(neighbor)
-                  RETURN neighbor.id + ' - ' + type(r) + ' -> ' +  node.id AS output
-                }
-                RETURN output LIMIT 50
-                """,
-                {"query": self.generate_full_text_query(entity)},
-            )
-            result += "\n".join([el['output'] for el in response])
-        return result
-    
-    def retriever(self, question):
-        print(f"Search query: {question}")
-        structured_data = self.structured_retriever(question)
-        unstructured_data = [el.page_content for el in self.vector_index.similarity_search(question)]
-        final_data = f"""Structured data:
-            {structured_data}
-            Unstructured data:
-            {"#Document ". join(unstructured_data)}
-        """
-        return final_data
-    
-    def _format_chat_history(self, chat_history):
-        buffer = []
-        for human, ai in chat_history:
-            buffer.append(HumanMessage(content = human))
-            buffer.append(AIMessage(content = ai))
-        return buffer
-    
-    def clear_neo4j_graph(self):
-        driver = GraphDatabase.driver(
-            os.getenv("NEO4J_URI"), 
-            auth = (
-                os.getenv("NEO4J_USERNAME"), 
-                os.getenv("NEO4J_PASSWORD")
-                )
-            )
-        with driver.session(database = "neo4j") as session:
-            session.run("MATCH (n) DETACH DELETE n")
 
     #------------------------------------------------
     ###NODES
@@ -329,10 +165,11 @@ class YouTubeContentSearch:
         user_input = state["user_input"]
         streamlit_action = []
         user_input = re.sub(r'[+\-/!":(){}\[\]\^~]', ' ', user_input)
-        youtube_search_query = requests.post(
-            "http://fastapi:8000/youtube_content_search/youtube_search_agent",
-            json = {"user_input": user_input}
-        ).json()
+        with st.spinner("Generating YouTube search query..."):
+            youtube_search_query = requests.post(
+                "http://fastapi:8000/youtube_content_search/youtube_search_agent",
+                json = {"user_input": user_input}
+            ).json()
         search_query = [youtube_search_query["search_query"]]
         search_results_dict = {}
         if self.search_type == "Search":
@@ -597,20 +434,20 @@ class YouTubeContentSearch:
         streamlit_actions = state["streamlit_actions"]
         user_input = state["user_input"]
         streamlit_action = []
-        question_answer = requests.post(
-            "http://fastapi:8000/youtube_content_search/rag_chain",
-            json = {"user_input": user_input}
-        ).json()
-        #question_answer = self.rag_chain.invoke({"question": user_input})
+        with st.spinner("Getting the answer..."):
+            question_answer = requests.post(
+                "http://fastapi:8000/youtube_content_search/rag_chain",
+                json = {"user_input": user_input}
+            ).json()
         messages += [
             (
                 "assistant",
-                question_answer
+                question_answer["question_answer"]
             )
         ]
         streamlit_action += [(
             "markdown", 
-            {"body": question_answer},
+            {"body": question_answer["question_answer"]},
             ("Assistant response", True),
             "assistant"
             )]
@@ -693,9 +530,12 @@ class YouTubeChatbot:
                     #temperature = temperature_filter,
                 )
 
-    def load_model(self, rag_chain):
+    def load_model(
+        self, 
+        #rag_chain
+        ):
         ###GRAPH
-        self.rag_chain = rag_chain
+        #self.rag_chain = rag_chain
         self.graph_builder = StateGraph(State)
         self.graph_builder.add_node("chatbot", self.chatbot)
         self.graph_builder.add_edge(START, "chatbot")
@@ -721,16 +561,20 @@ class YouTubeChatbot:
             ("User request", True),
             "user"
             )]
-        answer = self.rag_chain.invoke({"question": user_input})
+        with st.spinner("Getting the answer..."):
+            answer = requests.post(
+                "http://fastapi:8000/youtube_content_search/rag_chain",
+                json = {"user_input": user_input}
+            ).json()
         messages += [
             (
                 "assistant",
-                answer
+                answer["question_answer"]
             )
         ]
         streamlit_action += [(
             "markdown", 
-            {"body": answer},
+            {"body": answer["question_answer"]},
             ("Assistant response", True),
             "assistant"
             )]
