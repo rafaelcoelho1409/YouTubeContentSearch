@@ -176,20 +176,6 @@ class YouTubeContentSearch:
         if model_config["search_type"] == "Search":
             search_filters_dict = requests.get("http://fastapi:8000/search_youtube_videos/search/search_filters_dict/1").json()
             for query in stqdm.stqdm(search_query, desc = "Searching YouTube videos"):
-                #search_results = Search(
-                #    query,
-                #    filters = search_filters_dict).videos[:self.max_results]
-                #search_results_dict[query] = {
-                #    "title": [video.title for video in search_results],
-                #    "author": [video.author for video in search_results],
-                #    "publish_date": [video.publish_date for video in search_results],
-                #    "views": [video.views for video in search_results],
-                #    "length": [video.length for video in search_results],
-                #    "captions": [str(list(video.captions.lang_code_index.keys())) for video in search_results],
-                #    #"keywords": [video.keywords for video in search_results],
-                #    #"description": [video.description for video in search_results],
-                #    "video_id": [video.video_id for video in search_results],
-                #}
                 search_results_dict = requests.post(
                     "http://fastapi:8000/search_youtube_videos/search/search_filters_dict/2",
                     json = {
@@ -197,48 +183,33 @@ class YouTubeContentSearch:
                         "search_filters_dict": search_filters_dict,
                         "search_results_dict": search_results_dict}
                 ).json()
-            st.write(search_results_dict)
-        #elif self.search_type == "Video":
         elif model_config["search_type"] == "Video":
-            search_results = YouTube(self.video_url)
-            search_results_dict[self.video_url] = {
-                "title": [search_results.title],
-                "author": [search_results.author],
-                "publish_date": [search_results.publish_date],
-                "views": [search_results.views],
-                "length": [search_results.length],
-                "captions": [str(list(search_results.captions.lang_code_index.keys()))],
-                #"keywords": [search_results.keywords],
-                #"description": [search_results.description],
-                "video_id": [search_results.video_id],
-            }
-        #elif self.search_type == "Channel":
+            search_results_dict = requests.post(
+                "http://fastapi:8000/search_youtube_videos/video",
+                json = {
+                    "search_results_dict": search_results_dict}
+                ).json()
         elif model_config["search_type"] == "Channel":
-            channel_results_dict = {}
-            channel_results = Channel(self.channel_url)
-            channel_results_dict[channel_results.channel_name] = {
-                "description": [channel_results.description],
-                "last_updated": [channel_results.last_updated]}
-            search_results_dict[self.channel_url] = pd.DataFrame({
-                "title": [x.title for x in channel_results.videos[:self.max_results]],
-                "captions": [str(list(x.captions.lang_code_index.keys())) for x in channel_results.videos[:self.max_results]],
-                "length": [x.length for x in channel_results.videos[:self.max_results]],
-                "publish_date": [x.publish_date for x in channel_results.videos[:self.max_results]],
-                "views": [x.views for x in channel_results.videos[:self.max_results]],
-                "video_id": [x.video_id for x in channel_results.videos[:self.max_results]],
-                "views": [x.views for x in channel_results.videos[:self.max_results]],
-            }).to_dict()
+            search_results_dict = requests.post(
+                "http://fastapi:8000/search_youtube_videos/channel/1",
+                json = {
+                    "search_results_dict": search_results_dict}
+                ).json()
+            channel_results_dict = requests.get(
+                "http://fastapi:8000/search_youtube_videos/channel/2"
+            ).json()
+            channel_name = list(channel_results_dict.keys())[0]
             messages += [
                 (
                     "assistant",
-                    channel_results_dict[channel_results.channel_name]
+                    channel_results_dict[channel_name]
                 )
             ]
             streamlit_action += [(
                 "markdown", 
                 {
                     "body": f"""
-                        - **Channel**: {channel_results.channel_name}  
+                        - **Channel**: {channel_name}
                         - **Description**: {messages[-1][1]["description"][0]}  
                         - **Last updated**: {messages[-1][1]["last_updated"][0]}  
                     """, 

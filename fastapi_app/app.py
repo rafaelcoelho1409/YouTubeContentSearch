@@ -546,3 +546,49 @@ def search_youtube_videos_search_2(request: SearchYTVideosSearchRequest):
         "video_id": [video.video_id for video in search_results],
     }
     return request.search_results_dict
+
+class SearchYTVideosVideoRequest(BaseModel):
+    search_results_dict: dict
+
+@app.post("/search_youtube_videos/video")
+def search_youtube_videos_video(request: SearchYTVideosVideoRequest):
+    search_results = YouTube(model_config.video_url)
+    request.search_results_dict[model_config.video_url] = {
+        "title": [search_results.title],
+        "author": [search_results.author],
+        "publish_date": [search_results.publish_date],
+        "views": [search_results.views],
+        "length": [search_results.length],
+        "captions": [str(list(search_results.captions.lang_code_index.keys()))],
+        #"keywords": [search_results.keywords],
+        #"description": [search_results.description],
+        "video_id": [search_results.video_id],
+    }
+    return request.search_results_dict
+
+class SearchYTVideosChannelRequest(BaseModel):
+    search_results_dict: dict
+
+@app.post("/search_youtube_videos/channel/1")
+def search_youtube_videos_video(request: SearchYTVideosChannelRequest):
+    channel_results = Channel(model_config.channel_url)
+    request.search_results_dict[model_config.channel_url] = pd.DataFrame({
+        "title": [x.title for x in channel_results.videos[:model_config.max_results]],
+        "captions": [str(list(x.captions.lang_code_index.keys())) for x in channel_results.videos[:model_config.max_results]],
+        "length": [x.length for x in channel_results.videos[:model_config.max_results]],
+        "publish_date": [x.publish_date for x in channel_results.videos[:model_config.max_results]],
+        "views": [x.views for x in channel_results.videos[:model_config.max_results]],
+        "video_id": [x.video_id for x in channel_results.videos[:model_config.max_results]],
+        "views": [x.views for x in channel_results.videos[:model_config.max_results]],
+        "channel_name": [channel_results.channel_name for x in channel_results.videos[:model_config.max_results]]
+    }).to_dict()
+    return request.search_results_dict
+
+@app.get("/search_youtube_videos/channel/2")
+def search_youtube_videos_video():
+    channel_results_dict = {}
+    channel_results = Channel(model_config.channel_url)
+    channel_results_dict[channel_results.channel_name] = {
+        "description": [channel_results.description],
+        "last_updated": [channel_results.last_updated]}
+    return channel_results_dict
