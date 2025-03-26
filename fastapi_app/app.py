@@ -223,6 +223,49 @@ def update_agents_config(config: AgentsConfig):
         os.environ[key] = value
     return agents_config
 
+class ModelConfig(BaseModel):
+    max_results: int | None
+    search_type: str | None
+    upload_date: str | None
+    video_type: str | None
+    duration: str | None
+    features: list | None
+    sort_by: str | None
+    video_url: str | None
+    channel_url: str | None
+    playlist_url: str | None
+
+model_config = ModelConfig(
+    max_results = None, 
+    search_type = None, 
+    upload_date = None, 
+    video_type = None, 
+    duration = None, 
+    features = None, 
+    sort_by = None,
+    video_url = None,
+    channel_url = None,
+    playlist_url = None
+    )
+
+@app.get("/model_config", response_model = ModelConfig)
+def get_model_config():
+    return model_config
+
+@app.put("/model_config", response_model = ModelConfig)
+def update_agents_config(config: ModelConfig):
+    model_config.max_results = config.max_results
+    model_config.search_type = config.search_type
+    model_config.upload_date = config.upload_date
+    model_config.video_type = config.video_type
+    model_config.duration = config.duration
+    model_config.features = config.features
+    model_config.sort_by = config.sort_by
+    model_config.video_url = config.video_url
+    model_config.channel_url = config.channel_url
+    model_config.playlist_url = config.playlist_url
+    return model_config
+
 @app.get("/youtube_content_search/clear_neo4j_graph")
 def clear_neo4j_graph():
     driver = GraphDatabase.driver(
@@ -454,3 +497,52 @@ def build_rag_chain(request: RAGChainRequest):
     )
     question_answer = rag_chain.invoke({"question": request.user_input})
     return {"question_answer": question_answer}
+
+@app.get("/search_youtube_videos/search/search_filters_dict/1")
+def search_youtube_videos_search_1():
+    search_filters_dict = {}
+    search_filters_dict_ = {
+        "upload_date": model_config.upload_date,
+        "type": model_config.video_type,
+        "duration": model_config.duration,
+        "features": model_config.features,
+        "sort_by": model_config.sort_by
+    }
+    for key, value in search_filters_dict_.copy().items():
+        if value in [[], None]:
+            search_filters_dict_.pop(key)
+    for key, value in search_filters_dict_.items():
+        if key == "features":
+            search_filters_dict[key] = [Filter.get_features(x) for x in value]
+        else:
+            search_filters_dict__ = {
+                "upload_date": (Filter.get_upload_date, model_config.upload_date),
+                "type":        (Filter.get_type,        model_config.video_type),
+                "duration":    (Filter.get_duration,    model_config.duration),
+                "sort_by":     (Filter.get_sort_by,     model_config.sort_by)      
+            }
+            search_filters_dict[key] = search_filters_dict__[key][0](search_filters_dict__[key][1])
+    return search_filters_dict
+
+class SearchYTVideosSearchRequest(BaseModel):
+    search_filters_dict: dict
+    search_results_dict: dict
+    query: str
+
+@app.post("/search_youtube_videos/search/search_filters_dict/2")
+def search_youtube_videos_search_2(request: SearchYTVideosSearchRequest):
+    search_results = Search(
+        request.query,
+        filters = request.search_filters_dict).videos[:model_config.max_results]
+    request.search_results_dict[request.query] = {
+        "title": [video.title for video in search_results],
+        "author": [video.author for video in search_results],
+        "publish_date": [video.publish_date for video in search_results],
+        "views": [video.views for video in search_results],
+        "length": [video.length for video in search_results],
+        "captions": [str(list(video.captions.lang_code_index.keys())) for video in search_results],
+        #"keywords": [video.keywords for video in search_results],
+        #"description": [video.description for video in search_results],
+        "video_id": [video.video_id for video in search_results],
+    }
+    return request.search_results_dict

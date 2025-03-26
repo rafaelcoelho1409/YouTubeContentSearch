@@ -135,6 +135,18 @@ elif search_type_filter == "Playlist":
 
 
 if submit_project_settings:
+    settings_dict = {
+        "max_results": None,
+        "search_type": None,
+        "upload_date": None,
+        "video_type": None,
+        "duration": None,
+        "features": None,
+        "sort_by": None,
+        "video_url": None,
+        "channel_url": None,
+        "playlist_url": None,
+    }
     if search_type_filter == "Search":
         st.session_state["max_results"] = max_results
         st.session_state["context_to_search"] = context_to_search
@@ -157,30 +169,49 @@ if submit_project_settings:
     )
     if search_type_filter == "Search":
         kwargs = {
-            "max_results": st.session_state["max_results"],
+            "max_results": max_results,
             "search_type": search_type_filter,
             "upload_date": upload_date,
             "duration": duration,
             "features": features,
             "sort_by": sort_by
         }
+        settings_dict["max_results"] = max_results
+        settings_dict["search_type"] = search_type_filter
+        settings_dict["upload_date"] = upload_date
+        settings_dict["duration"] = duration
+        settings_dict["features"] = features
+        settings_dict["sort_by"] = sort_by
     elif search_type_filter == "Video":
         kwargs = {
             "video_url": video_url,
             "search_type": search_type_filter
         }
+        settings_dict["video_url"] = video_url
+        settings_dict["search_type"] = search_type_filter
     elif search_type_filter == "Channel":
         kwargs = {
             "channel_url": channel_url,
             "search_type": search_type_filter,
             "max_results": max_results
         }
+        settings_dict["channel_url"] = channel_url
+        settings_dict["search_type"] = search_type_filter
+        settings_dict["max_results"] = max_results
     elif search_type_filter == "Playlist":
         kwargs = {
             "playlist_url": playlist_url,
             "search_type": search_type_filter,
-            "max_results": max_results
+            "max_results": max_results,
         }
+        settings_dict["playlist_url"] = playlist_url
+        settings_dict["search_type"] = search_type_filter
+        settings_dict["max_results"] = max_results
+    #Updating model_config
+    requests.put(
+        "http://fastapi:8000/model_config",
+        json = settings_dict
+    )
     #Loading YouTubeContentSearch
     requests.get(
         "http://fastapi:8000/youtube_content_search",

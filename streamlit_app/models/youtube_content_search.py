@@ -164,6 +164,7 @@ class YouTubeContentSearch:
         streamlit_actions = state["streamlit_actions"]
         user_input = state["user_input"]
         streamlit_action = []
+        model_config = requests.get("http://fastapi:8000/model_config").json()
         user_input = re.sub(r'[+\-/!":(){}\[\]\^~]', ' ', user_input)
         with st.spinner("Generating YouTube search query..."):
             youtube_search_query = requests.post(
@@ -172,45 +173,33 @@ class YouTubeContentSearch:
             ).json()
         search_query = [youtube_search_query["search_query"]]
         search_results_dict = {}
-        if self.search_type == "Search":
-            search_filters_dict = {}
-            search_filters_dict_ = {
-                "upload_date": self.upload_date,
-                "type": self.video_type,
-                "duration": self.duration,
-                "features": self.features,
-                "sort_by": self.sort_by
-            }
-            for key, value in search_filters_dict_.copy().items():
-                if value in [[], None]:
-                    search_filters_dict_.pop(key)
-            for key, value in search_filters_dict_.items():
-                if key == "features":
-                    search_filters_dict[key] = [Filter.get_features(x) for x in value]
-                else:
-                    search_filters_dict__ = {
-                        "upload_date": (Filter.get_upload_date, self.upload_date),
-                        "type":        (Filter.get_type,        self.video_type),
-                        "duration":    (Filter.get_duration,    self.duration),
-                        "sort_by":     (Filter.get_sort_by,     self.sort_by)      
-                    }
-                    search_filters_dict[key] = search_filters_dict__[key][0](search_filters_dict__[key][1])
+        if model_config["search_type"] == "Search":
+            search_filters_dict = requests.get("http://fastapi:8000/search_youtube_videos/search/search_filters_dict/1").json()
             for query in stqdm.stqdm(search_query, desc = "Searching YouTube videos"):
-                search_results = Search(
-                    query,
-                    filters = search_filters_dict).videos[:self.max_results]
-                search_results_dict[query] = {
-                    "title": [video.title for video in search_results],
-                    "author": [video.author for video in search_results],
-                    "publish_date": [video.publish_date for video in search_results],
-                    "views": [video.views for video in search_results],
-                    "length": [video.length for video in search_results],
-                    "captions": [str(list(video.captions.lang_code_index.keys())) for video in search_results],
-                    #"keywords": [video.keywords for video in search_results],
-                    #"description": [video.description for video in search_results],
-                    "video_id": [video.video_id for video in search_results],
-                }
-        elif self.search_type == "Video":
+                #search_results = Search(
+                #    query,
+                #    filters = search_filters_dict).videos[:self.max_results]
+                #search_results_dict[query] = {
+                #    "title": [video.title for video in search_results],
+                #    "author": [video.author for video in search_results],
+                #    "publish_date": [video.publish_date for video in search_results],
+                #    "views": [video.views for video in search_results],
+                #    "length": [video.length for video in search_results],
+                #    "captions": [str(list(video.captions.lang_code_index.keys())) for video in search_results],
+                #    #"keywords": [video.keywords for video in search_results],
+                #    #"description": [video.description for video in search_results],
+                #    "video_id": [video.video_id for video in search_results],
+                #}
+                search_results_dict = requests.post(
+                    "http://fastapi:8000/search_youtube_videos/search/search_filters_dict/2",
+                    json = {
+                        "query": query, 
+                        "search_filters_dict": search_filters_dict,
+                        "search_results_dict": search_results_dict}
+                ).json()
+            st.write(search_results_dict)
+        #elif self.search_type == "Video":
+        elif model_config["search_type"] == "Video":
             search_results = YouTube(self.video_url)
             search_results_dict[self.video_url] = {
                 "title": [search_results.title],
@@ -223,7 +212,8 @@ class YouTubeContentSearch:
                 #"description": [search_results.description],
                 "video_id": [search_results.video_id],
             }
-        elif self.search_type == "Channel":
+        #elif self.search_type == "Channel":
+        elif model_config["search_type"] == "Channel":
             channel_results_dict = {}
             channel_results = Channel(self.channel_url)
             channel_results_dict[channel_results.channel_name] = {
@@ -257,7 +247,8 @@ class YouTubeContentSearch:
                 ("Channel informations", True),
                 messages[-1][0],
                 )]
-        elif self.search_type == "Playlist":
+        #elif self.search_type == "Playlist":
+        elif model_config["search_type"] == "Playlist":
             playlist_results = Playlist(self.playlist_url)
             search_results_dict[self.playlist_url] = pd.DataFrame({
                 "title": [x.title for x in playlist_results.videos[:self.max_results]],
@@ -269,7 +260,8 @@ class YouTubeContentSearch:
                 "views": [x.views for x in playlist_results.videos[:self.max_results]],
             }).to_dict()
 
-        if self.search_type != "Video":
+        #if self.search_type != "Video":
+        if model_config["search_type"] != "Video":
             messages += [
                 (
                     "assistant",
