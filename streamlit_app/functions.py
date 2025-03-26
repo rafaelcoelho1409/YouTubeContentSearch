@@ -67,7 +67,14 @@ def settings():
     api_keys_dict = requests.get("http://fastapi:8000/settings/frameworks").json()
     framework_option = st.selectbox(
         label = "Framework",
-        options = api_keys_dict.keys()
+        options = [
+            "Groq",
+            #"Google Generative AI",
+            "Ollama",
+            "SambaNova",
+            "Scaleway",
+            "OpenAI"
+        ]
     )
     st.session_state["framework"] = framework_option
     provider_model_dict = requests.get("http://fastapi:8000/settings/frameworks/models").json()
@@ -102,6 +109,7 @@ def settings():
                 value = 0.00,
                 step = 0.01
             )
+            toggle_filters = st.columns(3)
             submit_button = st.form_submit_button(
                     label = "Run model",
                     use_container_width = True
@@ -169,6 +177,7 @@ def settings():
                         placeholder = "Provide the API key",
                         type = "password"
                     )
+                    os.environ[api_keys_dict[st.session_state["framework"]]] = globals()[api_keys_dict[st.session_state["framework"]]]
                 else:
                     globals()[api_keys_dict[st.session_state["framework"]]] = st.text_input(
                         label = api_keys_dict[st.session_state["framework"]],
@@ -222,10 +231,11 @@ def settings():
                     "api_key": {
                         "SCW_GENERATIVE_APIs_ENDPOINT": SCW_GENERATIVE_APIs_ENDPOINT,
                         "SCW_ACCESS_KEY": SCW_ACCESS_KEY,
-                        "SCW_SECRET_KEY": SCW_SECRET_KEY}}
+                        "SCW_SECRET_KEY": SCW_SECRET_KEY}}  
                 os.environ["SCW_GENERATIVE_APIs_ENDPOINT"] = SCW_GENERATIVE_APIs_ENDPOINT
                 os.environ["SCW_ACCESS_KEY"] = SCW_ACCESS_KEY
                 os.environ["SCW_SECRET_KEY"] = SCW_SECRET_KEY
+            toggle_filters = st.columns(3)
             submit_button = st.form_submit_button(
                     label = "Run model",
                     use_container_width = True
