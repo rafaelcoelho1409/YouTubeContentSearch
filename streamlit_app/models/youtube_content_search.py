@@ -39,7 +39,7 @@ from pytubefix import YouTube, Channel, Playlist
 from pytubefix.contrib.search import Search, Filter
 
 load_dotenv()
-#------------------------------------------------
+#-------------------------------------------------
 ###STRUCTURES
 class SearchQuery(BaseModel):
     search_query: str = Field(
