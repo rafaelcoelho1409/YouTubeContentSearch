@@ -220,16 +220,11 @@ class YouTubeContentSearch:
                 )]
         #elif self.search_type == "Playlist":
         elif model_config["search_type"] == "Playlist":
-            playlist_results = Playlist(self.playlist_url)
-            search_results_dict[self.playlist_url] = pd.DataFrame({
-                "title": [x.title for x in playlist_results.videos[:self.max_results]],
-                "captions": [str(list(x.captions.lang_code_index.keys())) for x in playlist_results.videos[:self.max_results]],
-                "length": [x.length for x in playlist_results.videos[:self.max_results]],
-                "publish_date": [x.publish_date for x in playlist_results.videos[:self.max_results]],
-                "views": [x.views for x in playlist_results.videos[:self.max_results]],
-                "video_id": [x.video_id for x in playlist_results.videos[:self.max_results]],
-                "views": [x.views for x in playlist_results.videos[:self.max_results]],
-            }).to_dict()
+            search_results_dict = requests.post(
+                "http://fastapi:8000/search_youtube_videos/playlist",
+                json = {
+                    "search_results_dict": search_results_dict}
+                ).json()
 
         #if self.search_type != "Video":
         if model_config["search_type"] != "Video":

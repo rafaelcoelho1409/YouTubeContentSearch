@@ -592,3 +592,20 @@ def search_youtube_videos_video():
         "description": [channel_results.description],
         "last_updated": [channel_results.last_updated]}
     return channel_results_dict
+
+class SearchYTVideosPlaylistRequest(BaseModel):
+    search_results_dict: dict
+
+@app.post("/search_youtube_videos/playlist")
+def search_youtube_videos_video(request: SearchYTVideosPlaylistRequest):
+    playlist_results = Playlist(model_config.playlist_url)
+    request.search_results_dict[model_config.playlist_url] = pd.DataFrame({
+        "title": [x.title for x in playlist_results.videos[:model_config.max_results]],
+        "captions": [str(list(x.captions.lang_code_index.keys())) for x in playlist_results.videos[:model_config.max_results]],
+        "length": [x.length for x in playlist_results.videos[:model_config.max_results]],
+        "publish_date": [x.publish_date for x in playlist_results.videos[:model_config.max_results]],
+        "views": [x.views for x in playlist_results.videos[:model_config.max_results]],
+        "video_id": [x.video_id for x in playlist_results.videos[:model_config.max_results]],
+        "views": [x.views for x in playlist_results.videos[:model_config.max_results]],
+    }).to_dict()
+    return request.search_results_dict
