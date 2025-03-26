@@ -609,3 +609,28 @@ def search_youtube_videos_video(request: SearchYTVideosPlaylistRequest):
         "views": [x.views for x in playlist_results.videos[:model_config.max_results]],
     }).to_dict()
     return request.search_results_dict
+
+class SetKnowledgeGraphTranscriptionsRequest(BaseModel):
+    video_id: str
+    transcriptions: dict
+
+@app.post("/set_knowledge_graph/transcriptions")
+def set_knowledge_graph_transcriptions(request: SetKnowledgeGraphTranscriptionsRequest):
+    transcripts = YouTubeTranscriptApi.list_transcripts(request.video_id)
+    for transcript in transcripts:
+        transcription = YouTubeTranscriptApi.get_transcript(
+            request.video_id,
+            languages = [transcript.language_code])
+        request.transcriptions[request.video_id] = Document(
+            page_content = " ".join([line["text"] for line in transcription]))
+    return request.transcriptions
+
+class SetKnowledgeGraphSplitDocumentsRequest(BaseModel):
+    transcriptions: dict
+
+@app.post("/set_knowledge_graph/split_documents")
+def set_knowledge_graph_split_documents(request: SetKnowledgeGraphSplitDocumentsRequest):
+    text_splitter = TokenTextSplitter(chunk_size = 512, chunk_overlap = 24)
+    print(request.transcriptions.values())
+    documents = text_splitter.split_documents(request.transcriptions.values())
+    return documents

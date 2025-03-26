@@ -218,7 +218,6 @@ class YouTubeContentSearch:
                 ("Channel informations", True),
                 messages[-1][0],
                 )]
-        #elif self.search_type == "Playlist":
         elif model_config["search_type"] == "Playlist":
             search_results_dict = requests.post(
                 "http://fastapi:8000/search_youtube_videos/playlist",
@@ -226,7 +225,6 @@ class YouTubeContentSearch:
                     "search_results_dict": search_results_dict}
                 ).json()
 
-        #if self.search_type != "Video":
         if model_config["search_type"] != "Video":
             messages += [
                 (
@@ -287,18 +285,24 @@ class YouTubeContentSearch:
         transcriptions = {}
         for video_id in stqdm.stqdm(transcripts_ids, desc = "Getting YouTube videos transcripts"):
             try:
-                transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
-                for transcript in transcripts:
-                    transcription = YouTubeTranscriptApi.get_transcript(
-                        video_id,
-                        languages = [transcript.language_code])
-                    transcriptions[video_id] = Document(
-                        page_content = " ".join([line["text"] for line in transcription]))
+                transcriptions = requests.post(
+                    "http://fastapi:8000/set_knowledge_graph/transcriptions",
+                    json = {
+                        "video_id": video_id,
+                        "transcriptions": transcriptions}
+                ).json()
             except:
                 pass
         #Building Knowledge Graphs
         text_splitter = TokenTextSplitter(chunk_size = 512, chunk_overlap = 24)
         documents = text_splitter.split_documents(transcriptions.values())
+        documents = requests.post(
+            "http://fastapi:8000/set_knowledge_graph/split_documents",
+            json = {
+                "transcriptions": transcriptions}
+        ).json()
+        st.write(documents)
+        st.stop()
         #Transforming documents to graphs take a little more time, we need better ways to make it faster
         graph_documents = []
         for document in stqdm.stqdm(documents, desc = "Transforming documents to graphs"):
