@@ -46,8 +46,8 @@ class State(TypedDict):
 #------------------------------------------------
 
 class YouTubeContentSearch:
-    def __init__(self):
-        self.shared_memory = MemorySaver()
+    def __init__(self,  shared_memory):
+        self.shared_memory = shared_memory
         self.config = {
             "configurable": {"thread_id": "1"},
             "callbacks": [StreamlitCallbackHandler(st.container())]}

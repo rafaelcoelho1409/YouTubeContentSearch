@@ -31,7 +31,8 @@ if settings_button:
 st.session_state["view_graph_button_container"] = st.sidebar.container()
         
 
-initialize_shared_memory()
+st.session_state["youtube_agent_memory"] = MemorySaver()
+st.session_state["chatbot_agent_memory"] = MemorySaver()
 
 
 clear_memory_button = st.sidebar.button(
@@ -41,6 +42,8 @@ clear_memory_button = st.sidebar.button(
 if clear_memory_button:
     if "youtube_agent" in st.session_state:
         st.session_state["youtube_agent"].shared_memory = MemorySaver()
+    if "chatbot_agent" in st.session_state:
+        st.session_state["chatbot_agent"].shared_memory = MemorySaver()
     st.session_state["snapshot"] = []
     requests.put(
         "http://fastapi:8000/streamlit_actions",
@@ -183,7 +186,7 @@ if submit_project_settings:
         "channel_url": None,
         "playlist_url": None,
     }
-    st.session_state["youtube_agent"] = YouTubeContentSearch()
+    st.session_state["youtube_agent"] = YouTubeContentSearch(st.session_state["youtube_agent_memory"])
     if search_type_filter == "Search":
         settings_dict["max_results"] = max_results
         settings_dict["search_type"] = search_type_filter
@@ -227,9 +230,7 @@ except:
     st.stop()
 
 
-st.session_state["chatbot_agent"] = YouTubeChatbot(
-    st.session_state["youtube_agent"].shared_memory
-)
+st.session_state["chatbot_agent"] = YouTubeChatbot(st.session_state["chatbot_agent_memory"])
 st.session_state["chatbot_agent"].load_model()
 
 
