@@ -12,6 +12,7 @@ neo4j/conf
 neo4j/plugins
 lib/
 graph.html
+mlruns/
 
 # Virtual environments
 .venv
