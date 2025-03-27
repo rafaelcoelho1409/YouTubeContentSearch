@@ -66,15 +66,6 @@ class Entities(BaseModel):
         description = "All the person, organization, or business entities that "
         "appear in the text",
     )
-
-
-class State(TypedDict):
-    error: str
-    messages: List
-    streamlit_actions: List
-    user_input: str
-    search_results: List
-    unique_videos: List
 #------------------------------------------------
 app = FastAPI()
 
@@ -695,5 +686,19 @@ def set_knowledge_graph_graph_documents(request: SetKnowledgeGraphGraphDocuments
         "page_contents": [x.source.page_content for x in graph_documents]
     }
 
+class StreamlitActions(BaseModel):
+    streamlit_actions: list
 
-#---------------------------------
+
+state = StreamlitActions(
+    streamlit_actions = []
+)
+
+@app.get("/streamlit_actions")
+def get_agent_state():
+    return state.streamlit_actions
+
+@app.put("/streamlit_actions")
+def update_agent_state(request: StreamlitActions):
+    state.streamlit_actions += request.streamlit_actions
+    return state.streamlit_actions

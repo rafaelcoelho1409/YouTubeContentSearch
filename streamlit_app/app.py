@@ -147,30 +147,8 @@ if submit_project_settings:
         "channel_url": None,
         "playlist_url": None,
     }
-    if search_type_filter == "Search":
-        st.session_state["max_results"] = max_results
-        st.session_state["context_to_search"] = context_to_search
-    elif search_type_filter == "Video":
-        st.session_state["context_to_search"] = context_to_search
-        st.session_state["video_url"] = video_url
-    elif search_type_filter == "Channel":
-        st.session_state["context_to_search"] = context_to_search
-        st.session_state["max_results"] = max_results
-        st.session_state["channel_url"] = channel_url
-    elif search_type_filter == "Playlist":
-        st.session_state["context_to_search"] = context_to_search
-        st.session_state["max_results"] = max_results
-        st.session_state["playlist_url"] = playlist_url
     agent = YouTubeContentSearch()
     if search_type_filter == "Search":
-        kwargs = {
-            "max_results": max_results,
-            "search_type": search_type_filter,
-            "upload_date": upload_date,
-            "duration": duration,
-            "features": features,
-            "sort_by": sort_by
-        }
         settings_dict["max_results"] = max_results
         settings_dict["search_type"] = search_type_filter
         settings_dict["upload_date"] = upload_date
@@ -178,27 +156,13 @@ if submit_project_settings:
         settings_dict["features"] = features
         settings_dict["sort_by"] = sort_by
     elif search_type_filter == "Video":
-        kwargs = {
-            "video_url": video_url,
-            "search_type": search_type_filter
-        }
         settings_dict["video_url"] = video_url
         settings_dict["search_type"] = search_type_filter
     elif search_type_filter == "Channel":
-        kwargs = {
-            "channel_url": channel_url,
-            "search_type": search_type_filter,
-            "max_results": max_results
-        }
         settings_dict["channel_url"] = channel_url
         settings_dict["search_type"] = search_type_filter
         settings_dict["max_results"] = max_results
     elif search_type_filter == "Playlist":
-        kwargs = {
-            "playlist_url": playlist_url,
-            "search_type": search_type_filter,
-            "max_results": max_results,
-        }
         settings_dict["playlist_url"] = playlist_url
         settings_dict["search_type"] = search_type_filter
         settings_dict["max_results"] = max_results
@@ -218,11 +182,7 @@ if submit_project_settings:
         )
     agent.build_graph()
     agent.stream_graph_updates(context_to_search)
-    st.session_state["snapshot"] = agent.graph.get_state(
-        agent.config)
-
-if not "snapshot" in st.session_state:
-    st.session_state["snapshot"] = []
+    st.session_state["context_to_search"] = context_to_search
 
 try:
     context_to_search = st.session_state["context_to_search"]

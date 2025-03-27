@@ -209,6 +209,12 @@ class YouTubeContentSearch:
             unique_videos = {
                 "video_id": search_results_dict[self.video_url]["video_id"]
             }
+        requests.put(
+            "http://fastapi:8000/streamlit_actions",
+            json = {
+                "streamlit_actions": streamlit_actions,
+            }
+        )
         return {
             "messages": messages,
             "streamlit_actions": streamlit_actions,
@@ -299,6 +305,12 @@ class YouTubeContentSearch:
             messages[-1][0],
             )]
         streamlit_actions += [streamlit_action]
+        requests.put(
+            "http://fastapi:8000/streamlit_actions",
+            json = {
+                "streamlit_actions": streamlit_actions,
+            }
+        )
         return {
             "messages": messages,
             "streamlit_actions": streamlit_actions,
@@ -327,6 +339,12 @@ class YouTubeContentSearch:
             "assistant"
             )]
         streamlit_actions += [streamlit_action]
+        requests.put(
+            "http://fastapi:8000/streamlit_actions",
+            json = {
+                "streamlit_actions": streamlit_actions,
+            }
+        )
         return {
                 "messages": messages,
                 "streamlit_actions": streamlit_actions,
