@@ -35,6 +35,7 @@ from langchain_core.runnables import (
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain.text_splitter import TokenTextSplitter
 from langgraph.graph import END, StateGraph, START
+from langgraph.checkpoint.memory import MemorySaver
 from neo4j import GraphDatabase
 from pytubefix import YouTube, Channel, Playlist
 from pytubefix.contrib.search import Search, Filter
@@ -77,64 +78,13 @@ class State(TypedDict):
 #------------------------------------------------
 
 class YouTubeContentSearch:
-    def __init__(self, framework, temperature_filter, model_name, shared_memory):
-        pass
-        #self.shared_memory = shared_memory
-        #self.config = {
-        #    "configurable": {"thread_id": "1"},
-        #    "callbacks": [StreamlitCallbackHandler(st.container())]}
-        #self.llm_framework = {
-        #    "Groq": ChatGroq,
-        #    "Ollama": ChatOllama,
-        #    "Google Generative AI": ChatGoogleGenerativeAI,
-        #    "SambaNova": ChatSambaNovaCloud,
-        #    "Scaleway": ChatOpenAI,
-        #    "OpenAI": ChatOpenAI,
-        #}
-        #self.llm_model = self.llm_framework[framework]
-        #if framework == "Scaleway":
-        #    self.llm = ChatOpenAI(
-        #        base_url = os.getenv("SCW_GENERATIVE_APIs_ENDPOINT"),
-        #        api_key = os.getenv("SCW_SECRET_KEY"),
-        #        model = model_name,
-        #        temperature =  temperature_filter
-        #    )
-        #else:
-        #    try:
-        #        self.llm = self.llm_model(
-        #            model = model_name,
-        #            temperature = temperature_filter,
-        #        )
-        #    except:
-        #        self.llm = self.llm_model(
-        #            model = model_name,
-        #            #temperature = temperature_filter,
-        #        )
+    def __init__(self):
+        self.shared_memory = MemorySaver()
+        self.config = {
+            "configurable": {"thread_id": "1"},
+            "callbacks": [StreamlitCallbackHandler(st.container())]}
 
-    def load_model(
-            self, 
-            max_results = None, 
-            search_type = None, 
-            upload_date = None, 
-            video_type = None, 
-            duration = None, 
-            features = None, 
-            sort_by = None,
-            video_url = None,
-            channel_url = None,
-            playlist_url = None):
-        self.max_results = max_results
-        self.search_type = search_type
-        self.upload_date = upload_date
-        self.video_type = video_type
-        self.duration = duration
-        self.features = features
-        self.sort_by = sort_by
-        self.video_url = video_url
-        self.channel_url = channel_url
-        self.playlist_url = playlist_url
-        with st.spinner("Clearing all previous Neo4J relationships to avoid context confusion"):
-            requests.get("http://fastapi:8000/youtube_content_search/clear_neo4j_graph")
+    def build_graph(self):
         ##------------------------------------------------
         self.workflow = StateGraph(State)
         ###NODES
@@ -271,7 +221,8 @@ class YouTubeContentSearch:
         streamlit_actions = state["streamlit_actions"]
         unique_videos = state["unique_videos"]
         streamlit_action = []
-        if self.search_type != "Video":
+        model_config = requests.get("http://fastapi:8000/model_config").json()
+        if model_config["search_type"] != "Video":
             transcripts_ids = unique_videos["video_id"].values()#[video["id"] for video in unique_videos]
         else:
             transcripts_ids = unique_videos["video_id"]

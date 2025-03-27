@@ -40,7 +40,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from neo4j import GraphDatabase
 from pytubefix import YouTube, Channel, Playlist
 from pytubefix.contrib.search import Search, Filter
-from models.youtube_content_search import YouTubeContentSearch
 
 #------------------------------------------------
 ###STRUCTURES
@@ -327,7 +326,10 @@ def set_model():
 @app.get("/youtube_content_search/load_model")
 def load_model():
     requests.get("http://fastapi:8000/youtube_content_search/clear_neo4j_graph")
-    global neo4j_graph, vector_index, llm_transformer
+    global neo4j_graph, vector_index, llm_transformer, config
+    config = {
+        "configurable": {"thread_id": "1"},
+        "callbacks": [StreamlitCallbackHandler(st.container())]}
     neo4j_graph = Neo4jGraph()
     vector_index = Neo4jVector.from_existing_graph(
         HuggingFaceEmbeddings(model_name = "all-MiniLM-L6-v2"),
@@ -693,21 +695,5 @@ def set_knowledge_graph_graph_documents(request: SetKnowledgeGraphGraphDocuments
         "page_contents": [x.source.page_content for x in graph_documents]
     }
 
-#THIS IS A DRAFT
-#@app.get("/youtube_content_search/build_graph")
-#def build_graph():
-#    global workflow, graph 
-#    workflow = StateGraph(State)
-#    ###NODES
-#    workflow.add_node("search_youtube_videos", self.search_youtube_videos)
-#    workflow.add_node("set_knowledge_graph", self.set_knowledge_graph)
-#    workflow.add_node("final_step", self.final_step)
-#    ###EDGES
-#    workflow.add_edge(START, "search_youtube_videos")
-#    workflow.add_edge("search_youtube_videos", "set_knowledge_graph")
-#    workflow.add_edge("set_knowledge_graph", "final_step")
-#    workflow.add_edge("final_step", END)
-#    graph = workflow.compile(
-#        checkpointer = st.session_state["shared_memory"],#self.shared_memory
-#    )
-#    return "Graph built with success."
+
+#---------------------------------

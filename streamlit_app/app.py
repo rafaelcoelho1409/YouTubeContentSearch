@@ -161,12 +161,7 @@ if submit_project_settings:
         st.session_state["context_to_search"] = context_to_search
         st.session_state["max_results"] = max_results
         st.session_state["playlist_url"] = playlist_url
-    st.session_state["youtube_content_search_agent"] = YouTubeContentSearch(
-        st.session_state["framework"],
-        st.session_state["temperature_filter"], 
-        st.session_state["model_name"],
-        st.session_state["shared_memory"]
-    )
+    agent = YouTubeContentSearch()
     if search_type_filter == "Search":
         kwargs = {
             "max_results": max_results,
@@ -213,17 +208,18 @@ if submit_project_settings:
         json = settings_dict
     )
     #Loading YouTubeContentSearch
-    requests.get(
-        "http://fastapi:8000/youtube_content_search",
-    )
-    requests.get(
-        "http://fastapi:8000/youtube_content_search/load_model",
-    )
-    st.session_state["youtube_content_search_agent"].load_model(**kwargs)
-    st.session_state["youtube_content_search_agent"].stream_graph_updates(
-        context_to_search)
-    st.session_state["snapshot"] = st.session_state["youtube_content_search_agent"].graph.get_state(
-        st.session_state["youtube_content_search_agent"].config)
+    with st.spinner("Loading YouTube Content Search..."):
+        requests.get(
+            "http://fastapi:8000/youtube_content_search",
+        )
+    with st.spinner("Loading model..."):
+        requests.get(
+            "http://fastapi:8000/youtube_content_search/load_model",
+        )
+    agent.build_graph()
+    agent.stream_graph_updates(context_to_search)
+    st.session_state["snapshot"] = agent.graph.get_state(
+        agent.config)
 
 if not "snapshot" in st.session_state:
     st.session_state["snapshot"] = []
