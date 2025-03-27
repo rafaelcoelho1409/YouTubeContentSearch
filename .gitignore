@@ -13,6 +13,7 @@ neo4j/plugins
 lib/
 graph.html
 mlruns/
+mlartifacts/
 
 # Virtual environments
 .venv

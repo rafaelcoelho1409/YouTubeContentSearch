@@ -276,6 +276,7 @@ def clear_neo4j_graph():
 def set_model():
     mlflow.set_tracking_uri("http://mlflow:5000")
     mlflow.set_experiment("YouTube Content Search")
+    mlflow.langchain.autolog()
     global shared_memory, config, llm
     shared_memory = MemorySaver()
     config = {
@@ -350,6 +351,11 @@ def build_youtube_search_agent(request: YouTubeSearchAgentRequest):
         ]
     )
     chain = prompt | llm.with_structured_output(SearchQuery)
+    #with mlflow.start_run():
+    #    youtube_search_agent_info = mlflow.langchain.log_model(
+    #        chain,
+    #        "youtube_search_agent",
+    #    )
     response = chain.invoke({"user_input": request.user_input})
     return {"search_query": response.search_query}
 
@@ -373,6 +379,11 @@ def build_entity_chain(request: EntityChainRequest):
     )
     global entity_chain
     entity_chain = prompt | llm.with_structured_output(Entities)
+    #with mlflow.start_run():
+    #    entity_chain_info = mlflow.langchain.log_model(
+    #        entity_chain,
+    #        "entity_chain",
+    #    )
     entities = entity_chain.invoke({"question": request.question})
     return {"names": entities.names}
 
@@ -493,6 +504,11 @@ def build_rag_chain(request: RAGChainRequest):
         | llm
         | StrOutputParser()
     )
+    #with mlflow.start_run():
+    #    rag_chain_info = mlflow.langchain.log_model(
+    #        rag_chain,
+    #        "rag_chain",
+    #    )
     question_answer = rag_chain.invoke({"question": request.user_input})
     return {"question_answer": question_answer}
 
