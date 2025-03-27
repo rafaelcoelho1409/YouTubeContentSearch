@@ -192,10 +192,7 @@ except:
 
 
 chatbot_agent = YouTubeChatbot(
-    st.session_state["framework"],
-    st.session_state["temperature_filter"],
-    st.session_state["model_name"],
-    st.session_state["shared_memory"]
+    agent.shared_memory
 )
 chatbot_agent.load_model()
 
@@ -207,7 +204,7 @@ view_app_graph = st.session_state["view_graph_button_container"].button(
 if view_app_graph:
     view_application_graphs(
         {
-            "YouTube Content Search": st.session_state["youtube_content_search_agent"].graph,
+            "YouTube Content Search": agent.graph,
             "YouTube Chatbot": chatbot_agent.graph})
     
 
@@ -218,7 +215,7 @@ view_neo4j_graph = st.sidebar.button(
 if view_neo4j_graph:
     view_neo4j_context_graph()
 
-
+#CONTINUAR DAQUI
 st.session_state["snapshot"] += chatbot_agent.graph.get_state(chatbot_agent.config)
 messages_blocks_ = [
     x 

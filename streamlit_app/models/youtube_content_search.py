@@ -390,45 +390,14 @@ class YouTubeContentSearch:
 
 
 class YouTubeChatbot:
-    def __init__(self, framework, temperature_filter, model_name, shared_memory):
+    def __init__(self, shared_memory):
         self.shared_memory = shared_memory
         self.config = {
             "configurable": {"thread_id": "1"},
             "callbacks": [StreamlitCallbackHandler(st.container())]}
-        self.llm_framework = {
-            "Groq": ChatGroq,
-            "Ollama": ChatOllama,
-            "Google Generative AI": ChatGoogleGenerativeAI,
-            "SambaNova": ChatSambaNovaCloud,
-            "Scaleway": ChatOpenAI,
-            "OpenAI": ChatOpenAI
-        }
-        self.llm_model = self.llm_framework[framework]
-        if framework == "Scaleway":
-            self.llm = ChatOpenAI(
-                base_url = os.getenv("SCW_GENERATIVE_APIs_ENDPOINT"),
-                api_key = os.getenv("SCW_SECRET_KEY"),
-                model = model_name,
-                temperature =  temperature_filter
-            )
-        else:
-            try:
-                self.llm = self.llm_model(
-                    model = model_name,
-                    temperature = temperature_filter,
-                )
-            except:
-                self.llm = self.llm_model(
-                    model = model_name,
-                    #temperature = temperature_filter,
-                )
 
-    def load_model(
-        self, 
-        #rag_chain
-        ):
+    def load_model(self):
         ###GRAPH
-        #self.rag_chain = rag_chain
         self.graph_builder = StateGraph(State)
         self.graph_builder.add_node("chatbot", self.chatbot)
         self.graph_builder.add_edge(START, "chatbot")
@@ -472,6 +441,12 @@ class YouTubeChatbot:
             "assistant"
             )]
         streamlit_actions += [streamlit_action]
+        requests.put(
+            "http://fastapi:8000/streamlit_actions",
+            json = {
+                "streamlit_actions": streamlit_actions,
+            }
+        )
         return {
             "messages": messages,
             "streamlit_actions": streamlit_actions,
