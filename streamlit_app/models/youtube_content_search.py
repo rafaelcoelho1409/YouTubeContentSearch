@@ -444,7 +444,7 @@ class YouTubeChatbot:
         requests.put(
             "http://fastapi:8000/streamlit_actions",
             json = {
-                "streamlit_actions": streamlit_actions,
+                "streamlit_actions": streamlit_actions[1:],
             }
         )
         return {
@@ -457,6 +457,13 @@ class YouTubeChatbot:
         # The config is the **second positional argument** to stream() or invoke()!
         events = self.graph.stream(
             {
+                "messages": [("user", user_input)], 
+                "streamlit_actions": [[(
+                    "markdown", 
+                    {"body": user_input},
+                    ("User request", True),
+                    "user"
+                    )]],
                 "error": "",
                 "user_input": user_input,
                 "search_results": {}

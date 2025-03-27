@@ -10,6 +10,8 @@ pyproject.toml
 .env
 neo4j/conf
 neo4j/plugins
+lib/
+assets/graph.html
 
 # Virtual environments
 .venv

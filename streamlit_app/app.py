@@ -8,7 +8,8 @@ from functions import (
     check_model_and_temperature,
     initialize_shared_memory,
     view_application_graphs,
-    view_neo4j_context_graph
+    view_neo4j_context_graph,
+    get_unique_elements
 )
 from models.youtube_content_search import (
     YouTubeContentSearch, 
@@ -32,6 +33,25 @@ st.session_state["view_graph_button_container"] = st.sidebar.container()
 
 initialize_shared_memory()
 
+if not "snapshot" in st.session_state:
+    st.session_state["snapshot"] = []
+streamlit_actions = requests.get(
+    "http://fastapi:8000/streamlit_actions"
+).json()
+st.session_state["snapshot"] += streamlit_actions
+for actions in st.session_state["snapshot"][:-1]:
+    if actions != []:
+        for action in actions:
+            st.chat_message(
+                action[3]
+            ).expander(
+                action[2][0], 
+                expanded = action[2][1]
+            ).__getattribute__(
+                action[0]
+            )(
+                **action[1]
+            )
 
 model_temperature_checker = check_model_and_temperature()
 if model_temperature_checker == False:
@@ -147,7 +167,7 @@ if submit_project_settings:
         "channel_url": None,
         "playlist_url": None,
     }
-    agent = YouTubeContentSearch()
+    st.session_state["youtube_agent"] = YouTubeContentSearch()
     if search_type_filter == "Search":
         settings_dict["max_results"] = max_results
         settings_dict["search_type"] = search_type_filter
@@ -180,8 +200,8 @@ if submit_project_settings:
         requests.get(
             "http://fastapi:8000/youtube_content_search/load_model",
         )
-    agent.build_graph()
-    agent.stream_graph_updates(context_to_search)
+    st.session_state["youtube_agent"].build_graph()
+    st.session_state["youtube_agent"].stream_graph_updates(context_to_search)
     st.session_state["context_to_search"] = context_to_search
 
 try:
@@ -192,7 +212,7 @@ except:
 
 
 chatbot_agent = YouTubeChatbot(
-    agent.shared_memory
+    st.session_state["youtube_agent"].shared_memory
 )
 chatbot_agent.load_model()
 
@@ -204,7 +224,7 @@ view_app_graph = st.session_state["view_graph_button_container"].button(
 if view_app_graph:
     view_application_graphs(
         {
-            "YouTube Content Search": agent.graph,
+            "YouTube Content Search": st.session_state["youtube_agent"].graph,
             "YouTube Chatbot": chatbot_agent.graph})
     
 
@@ -214,44 +234,6 @@ view_neo4j_graph = st.sidebar.button(
 )
 if view_neo4j_graph:
     view_neo4j_context_graph()
-
-#CONTINUAR DAQUI
-st.session_state["snapshot"] += chatbot_agent.graph.get_state(chatbot_agent.config)
-messages_blocks_ = [
-    x 
-    for i, x 
-    in enumerate(st.session_state["snapshot"])
-    if i % 7 == 0
-    ]
-messages_blocks = []
-for item in messages_blocks_:
-    if item not in messages_blocks:
-        messages_blocks.append(item)
-streamlit_actions = []
-for item in messages_blocks:
-    if item not in streamlit_actions:
-        streamlit_actions += item["streamlit_actions"]
-#if not submit_project_settings:
-try:
-    index_start_messages = np.where(np.array([x[0][3] for x in streamlit_actions]) == "user")[0][1]
-    streamlit_actions = streamlit_actions[index_start_messages:]
-except:
-    pass
-for actions in streamlit_actions:
-    if actions != []:
-        for action in actions:
-            st.chat_message(
-                action[3]
-            ).expander(
-                action[2][0], 
-                expanded = action[2][1]
-            ).__getattribute__(
-                action[0]
-            )(
-                **action[1]
-            )
-#else:
-#    pass
 
 
 if prompt := st.chat_input():

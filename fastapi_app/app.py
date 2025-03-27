@@ -700,5 +700,5 @@ def get_agent_state():
 
 @app.put("/streamlit_actions")
 def update_agent_state(request: StreamlitActions):
-    state.streamlit_actions += request.streamlit_actions
+    state.streamlit_actions = request.streamlit_actions
     return state.streamlit_actions

@@ -60,7 +60,19 @@ def initialize_shared_memory():
     if "shared_memory" not in st.session_state:
         st.session_state["shared_memory"] = MemorySaver()
 
-
+def get_unique_elements(lst):
+    seen = set()
+    unique = []
+    for item in lst:
+        if isinstance(item, (list, dict)):
+            # Convert to a hashable type (tuple for lists, frozenset for dicts)
+            hashable_item = tuple(item) if isinstance(item, list) else frozenset(item.items())
+        else:
+            hashable_item = item
+        if hashable_item not in seen:
+            seen.add(hashable_item)
+            unique.append(item)
+    return unique
 ###>>>---STREAMLIT FUNCTIONS---<<<###
 @st.dialog("Settings", width = "large")
 def settings():
