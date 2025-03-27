@@ -5,6 +5,7 @@ import streamlit as st
 import os
 import pandas as pd
 import requests
+import mlflow
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
@@ -273,6 +274,8 @@ def clear_neo4j_graph():
 
 @app.get("/youtube_content_search")
 def set_model():
+    mlflow.set_tracking_uri("http://mlflow:5000")
+    mlflow.set_experiment("YouTube Content Search")
     global shared_memory, config, llm
     shared_memory = MemorySaver()
     config = {

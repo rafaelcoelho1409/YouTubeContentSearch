@@ -19,12 +19,12 @@ COPY . /app
 # Set the working directory
 WORKDIR /app
 
-# Expose port 8501 for Streamlit
-EXPOSE 8501
+# Expose port 5000 for FastAPI
+EXPOSE 5000
 
-# Run the Streamlit app
-CMD ["/bin/bash", "-c", "uv init && \
-    uv venv --python 3.12 && \
+# Run the app
+CMD ["/bin/bash", "-c", "uv init \ 
+    && uv venv --python 3.12 && \
     source .venv/bin/activate && \
     uv add -r requirements.txt && \
-    streamlit run app.py"]
+    mlflow server --host 0.0.0.0 --port 5000"]

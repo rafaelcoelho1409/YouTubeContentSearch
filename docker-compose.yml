@@ -53,6 +53,17 @@ services:
       - ./neo4j/conf:/var/lib/neo4j/conf  # Persistent config storage
     networks:
       - my_network
+  mlflow:
+    build:
+      context: ./mlflow_app
+      dockerfile: Dockerfile.mlflow
+    container_name: mlflow_app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow_app:/app  # Bind mount for live code updates
+    networks:
+      - my_network
 
 # Volumes and Networks
 volumes:
