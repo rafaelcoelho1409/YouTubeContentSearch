@@ -631,6 +631,55 @@ class SetKnowledgeGraphSplitDocumentsRequest(BaseModel):
 @app.post("/set_knowledge_graph/split_documents")
 def set_knowledge_graph_split_documents(request: SetKnowledgeGraphSplitDocumentsRequest):
     text_splitter = TokenTextSplitter(chunk_size = 512, chunk_overlap = 24)
-    print(request.transcriptions.values())
-    documents = text_splitter.split_documents(request.transcriptions.values())
-    return documents
+    transcriptions = [Document(
+        page_content = x["page_content"],
+        metadata = x["metadata"]) 
+        for x in request.transcriptions.values()]
+    documents = text_splitter.split_documents(transcriptions)
+    return [x.to_json() for x in documents]
+
+class SetKnowledgeGraphGraphDocumentsRequest(BaseModel):
+    documents: list
+
+@app.post("/set_knowledge_graph/graph_documents")
+def set_knowledge_graph_graph_documents(request: SetKnowledgeGraphGraphDocumentsRequest):
+    documents = [
+        Document(
+            page_content = x["kwargs"]["page_content"]
+        ) 
+        for x
+        in request.documents
+    ]
+    graph_documents = llm_transformer.convert_to_graph_documents(documents)
+    neo4j_graph.add_graph_documents(
+        graph_documents,
+        baseEntityLabel = True,
+        include_source = True
+    )
+    # Retriever
+    neo4j_graph.query(
+        "CREATE FULLTEXT INDEX entity IF NOT EXISTS FOR (e:__Entity__) ON EACH [e.id]")
+    #Graph nodes
+    nodes, nodes_dict = [], {}
+    for x in graph_documents:
+        nodes += x.nodes
+    nodes_dict["id"] = [x.id for x in nodes]
+    nodes_dict["type"] = [x.type for x in nodes]
+    #nodes_dict["properties"] = [x.properties for x in nodes]
+    #Graph relationships
+    relationships, relationships_dict = [], {}
+    for x in graph_documents:
+        relationships += x.relationships
+    relationships_dict["source_id"] = [x.source.id for x in relationships]
+    relationships_dict["source_type"] = [x.source.type for x in relationships]
+    #relationships_dict["source_properties"] = [x.source.properties for x in relationships]
+    relationships_dict["target_id"] = [x.target.id for x in relationships]
+    relationships_dict["target_type"] = [x.target.type for x in relationships]
+    #relationships_dict["target_properties"] = [x.target.properties for x in relationships]
+    relationships_dict["type"] = [x.type for x in relationships]
+    #relationships_dict["properties"] = [x.properties for x in relationships] 
+    return {
+        "nodes_dict": nodes_dict,
+        "relationships_dict": relationships_dict,
+        "page_contents": [x.source.page_content for x in graph_documents]
+    }

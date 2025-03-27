@@ -17,6 +17,7 @@ from langchain_openai import ChatOpenAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.chat_models.sambanova import ChatSambaNovaCloud
 from langchain_community.callbacks.streamlit import StreamlitCallbackHandler
+from langchain_community.graphs.graph_document import GraphDocument
 from langchain_neo4j import Neo4jGraph
 from langchain_community.vectorstores import Neo4jVector
 from langchain_community.vectorstores.neo4j_vector import remove_lucene_chars
@@ -294,32 +295,22 @@ class YouTubeContentSearch:
             except:
                 pass
         #Building Knowledge Graphs
-        text_splitter = TokenTextSplitter(chunk_size = 512, chunk_overlap = 24)
-        documents = text_splitter.split_documents(transcriptions.values())
         documents = requests.post(
             "http://fastapi:8000/set_knowledge_graph/split_documents",
             json = {
                 "transcriptions": transcriptions}
         ).json()
-        st.write(documents)
-        st.stop()
-        #Transforming documents to graphs take a little more time, we need better ways to make it faster
-        graph_documents = []
-        for document in stqdm.stqdm(documents, desc = "Transforming documents to graphs"):
-            graph_documents += self.llm_transformer.convert_to_graph_documents([document])
-        #graph_documents = self.llm_transformer.convert_to_graph_documents(documents)
-        #Graph nodes
-        nodes, nodes_dict = [], {}
-        for x in graph_documents:
-            nodes += x.nodes
-        nodes_dict["id"] = [x.id for x in nodes]
-        nodes_dict["type"] = [x.type for x in nodes]
-        #nodes_dict["properties"] = [x.properties for x in nodes]
+        #Graph documents
+        with st.spinner("Processing graph documents..."):
+            nodes_and_relationships = requests.post(
+                "http://fastapi:8000/set_knowledge_graph/graph_documents",
+                json = {
+                    "documents": documents}
+            ).json()
         messages += [
             (
                 "assistant",
-                #[x.nodes for x in graph_documents]
-                nodes_dict
+                nodes_and_relationships["nodes_dict"]
             )
         ]
         streamlit_action += [(
@@ -332,23 +323,10 @@ class YouTubeContentSearch:
             ("Graph nodes", False),
             messages[-1][0],
             )]
-        #Graph relationships
-        relationships, relationships_dict = [], {}
-        for x in graph_documents:
-            relationships += x.relationships
-        relationships_dict["source_id"] = [x.source.id for x in relationships]
-        relationships_dict["source_type"] = [x.source.type for x in relationships]
-        #relationships_dict["source_properties"] = [x.source.properties for x in relationships]
-        relationships_dict["target_id"] = [x.target.id for x in relationships]
-        relationships_dict["target_type"] = [x.target.type for x in relationships]
-        #relationships_dict["target_properties"] = [x.target.properties for x in relationships]
-        relationships_dict["type"] = [x.type for x in relationships]
-        #relationships_dict["properties"] = [x.properties for x in relationships] 
         messages += [
             (
                 "assistant",
-                #[x.relationships for x in graph_documents]
-                relationships_dict
+                nodes_and_relationships["relationships_dict"]
             )
         ]
         streamlit_action += [(
@@ -365,7 +343,7 @@ class YouTubeContentSearch:
         messages += [
             (
                 "assistant",
-                [x.source.page_content for x in graph_documents]
+                nodes_and_relationships["page_contents"]
             )
         ]
         streamlit_action += [(
@@ -377,14 +355,6 @@ class YouTubeContentSearch:
             ("Graph source", False),
             messages[-1][0],
             )]
-        self.neo4j_graph.add_graph_documents(
-            graph_documents,
-            baseEntityLabel = True,
-            include_source = True
-        )
-        # Retriever
-        self.neo4j_graph.query(
-            "CREATE FULLTEXT INDEX entity IF NOT EXISTS FOR (e:__Entity__) ON EACH [e.id]")
         streamlit_actions += [streamlit_action]
         return {
             "messages": messages,
