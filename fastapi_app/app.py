@@ -67,6 +67,15 @@ class Entities(BaseModel):
         description = "All the person, organization, or business entities that "
         "appear in the text",
     )
+
+
+class State(TypedDict):
+    error: str
+    messages: List
+    streamlit_actions: List
+    user_input: str
+    search_results: List
+    unique_videos: List
 #------------------------------------------------
 app = FastAPI()
 
@@ -683,3 +692,22 @@ def set_knowledge_graph_graph_documents(request: SetKnowledgeGraphGraphDocuments
         "relationships_dict": relationships_dict,
         "page_contents": [x.source.page_content for x in graph_documents]
     }
+
+#THIS IS A DRAFT
+#@app.get("/youtube_content_search/build_graph")
+#def build_graph():
+#    global workflow, graph 
+#    workflow = StateGraph(State)
+#    ###NODES
+#    workflow.add_node("search_youtube_videos", self.search_youtube_videos)
+#    workflow.add_node("set_knowledge_graph", self.set_knowledge_graph)
+#    workflow.add_node("final_step", self.final_step)
+#    ###EDGES
+#    workflow.add_edge(START, "search_youtube_videos")
+#    workflow.add_edge("search_youtube_videos", "set_knowledge_graph")
+#    workflow.add_edge("set_knowledge_graph", "final_step")
+#    workflow.add_edge("final_step", END)
+#    graph = workflow.compile(
+#        checkpointer = st.session_state["shared_memory"],#self.shared_memory
+#    )
+#    return "Graph built with success."

@@ -78,37 +78,38 @@ class State(TypedDict):
 
 class YouTubeContentSearch:
     def __init__(self, framework, temperature_filter, model_name, shared_memory):
-        self.shared_memory = shared_memory
-        self.config = {
-            "configurable": {"thread_id": "1"},
-            "callbacks": [StreamlitCallbackHandler(st.container())]}
-        self.llm_framework = {
-            "Groq": ChatGroq,
-            "Ollama": ChatOllama,
-            "Google Generative AI": ChatGoogleGenerativeAI,
-            "SambaNova": ChatSambaNovaCloud,
-            "Scaleway": ChatOpenAI,
-            "OpenAI": ChatOpenAI,
-        }
-        self.llm_model = self.llm_framework[framework]
-        if framework == "Scaleway":
-            self.llm = ChatOpenAI(
-                base_url = os.getenv("SCW_GENERATIVE_APIs_ENDPOINT"),
-                api_key = os.getenv("SCW_SECRET_KEY"),
-                model = model_name,
-                temperature =  temperature_filter
-            )
-        else:
-            try:
-                self.llm = self.llm_model(
-                    model = model_name,
-                    temperature = temperature_filter,
-                )
-            except:
-                self.llm = self.llm_model(
-                    model = model_name,
-                    #temperature = temperature_filter,
-                )
+        pass
+        #self.shared_memory = shared_memory
+        #self.config = {
+        #    "configurable": {"thread_id": "1"},
+        #    "callbacks": [StreamlitCallbackHandler(st.container())]}
+        #self.llm_framework = {
+        #    "Groq": ChatGroq,
+        #    "Ollama": ChatOllama,
+        #    "Google Generative AI": ChatGoogleGenerativeAI,
+        #    "SambaNova": ChatSambaNovaCloud,
+        #    "Scaleway": ChatOpenAI,
+        #    "OpenAI": ChatOpenAI,
+        #}
+        #self.llm_model = self.llm_framework[framework]
+        #if framework == "Scaleway":
+        #    self.llm = ChatOpenAI(
+        #        base_url = os.getenv("SCW_GENERATIVE_APIs_ENDPOINT"),
+        #        api_key = os.getenv("SCW_SECRET_KEY"),
+        #        model = model_name,
+        #        temperature =  temperature_filter
+        #    )
+        #else:
+        #    try:
+        #        self.llm = self.llm_model(
+        #            model = model_name,
+        #            temperature = temperature_filter,
+        #        )
+        #    except:
+        #        self.llm = self.llm_model(
+        #            model = model_name,
+        #            #temperature = temperature_filter,
+        #        )
 
     def load_model(
             self, 
@@ -135,15 +136,6 @@ class YouTubeContentSearch:
         with st.spinner("Clearing all previous Neo4J relationships to avoid context confusion"):
             requests.get("http://fastapi:8000/youtube_content_search/clear_neo4j_graph")
         ##------------------------------------------------
-        self.neo4j_graph = Neo4jGraph()
-        self.vector_index = Neo4jVector.from_existing_graph(
-            HuggingFaceEmbeddings(model_name = "all-MiniLM-L6-v2"),
-            search_type = "hybrid",
-            node_label = "Document",
-            text_node_properties = ["text"],
-            embedding_node_property = "embedding"
-        )
-        self.llm_transformer = LLMGraphTransformer(llm = self.llm)
         self.workflow = StateGraph(State)
         ###NODES
         self.workflow.add_node("search_youtube_videos", self.search_youtube_videos)
@@ -366,7 +358,7 @@ class YouTubeContentSearch:
         streamlit_actions = state["streamlit_actions"]
         user_input = state["user_input"]
         streamlit_action = []
-        with st.spinner("Getting the answer..."):
+        with st.spinner("Getting the response..."):
             question_answer = requests.post(
                 "http://fastapi:8000/youtube_content_search/rag_chain",
                 json = {"user_input": user_input}
@@ -493,7 +485,7 @@ class YouTubeChatbot:
             ("User request", True),
             "user"
             )]
-        with st.spinner("Getting the answer..."):
+        with st.spinner("Getting the response..."):
             answer = requests.post(
                 "http://fastapi:8000/youtube_content_search/rag_chain",
                 json = {"user_input": user_input}
