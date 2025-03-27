@@ -1,46 +1,14 @@
 import streamlit as st
-import stqdm
-import os
-import uuid
 import re
 import pandas as pd
 import requests
-from dotenv import load_dotenv
+import stqdm
 from typing import List
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
-from youtube_transcript_api import YouTubeTranscriptApi
-from langchain_ollama import ChatOllama
-from langchain_groq import ChatGroq
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.chat_models.sambanova import ChatSambaNovaCloud
 from langchain_community.callbacks.streamlit import StreamlitCallbackHandler
-from langchain_community.graphs.graph_document import GraphDocument
-from langchain_neo4j import Neo4jGraph
-from langchain_community.vectorstores import Neo4jVector
-from langchain_community.vectorstores.neo4j_vector import remove_lucene_chars
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import (
-    RunnableBranch,
-    RunnableLambda,
-    RunnableParallel,
-    RunnablePassthrough,
-)
-from langchain_experimental.graph_transformers import LLMGraphTransformer
-from langchain.text_splitter import TokenTextSplitter
 from langgraph.graph import END, StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
-from neo4j import GraphDatabase
-from pytubefix import YouTube, Channel, Playlist
-from pytubefix.contrib.search import Search, Filter
-
-load_dotenv()
 #-------------------------------------------------
 ###STRUCTURES
 class SearchQuery(BaseModel):
@@ -97,7 +65,7 @@ class YouTubeContentSearch:
         self.workflow.add_edge("set_knowledge_graph", "final_step")
         self.workflow.add_edge("final_step", END)
         self.graph = self.workflow.compile(
-            checkpointer = st.session_state["shared_memory"],#self.shared_memory
+            checkpointer = self.shared_memory
         )
 
     #------------------------------------------------

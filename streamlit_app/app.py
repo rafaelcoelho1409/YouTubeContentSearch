@@ -1,15 +1,12 @@
 import streamlit as st
 import requests
 from langgraph.checkpoint.memory import MemorySaver
-import uuid
-import numpy as np
 from functions import (
     settings,
     check_model_and_temperature,
     initialize_shared_memory,
     view_application_graphs,
     view_neo4j_context_graph,
-    get_unique_elements
 )
 from models.youtube_content_search import (
     YouTubeContentSearch, 
@@ -22,6 +19,9 @@ st.set_page_config(
     layout = "wide",
     initial_sidebar_state = "expanded")
 
+st.sidebar.title("YouTube Content Search")
+st.sidebar.caption("Author: Rafael Silva Coelho")
+
 settings_button = st.sidebar.button(
     label = "Settings",
     use_container_width = True
@@ -29,9 +29,24 @@ settings_button = st.sidebar.button(
 if settings_button:
     settings()
 st.session_state["view_graph_button_container"] = st.sidebar.container()
-
+        
 
 initialize_shared_memory()
+
+
+clear_memory_button = st.sidebar.button(
+    label = "Clear memory",
+    use_container_width = True,
+)
+if clear_memory_button:
+    if "youtube_agent" in st.session_state:
+        st.session_state["youtube_agent"].shared_memory = MemorySaver()
+    st.session_state["snapshot"] = []
+    requests.put(
+        "http://fastapi:8000/streamlit_actions",
+        json = {"streamlit_actions": []}
+    )
+
 
 if not "snapshot" in st.session_state:
     st.session_state["snapshot"] = []
@@ -39,7 +54,8 @@ streamlit_actions = requests.get(
     "http://fastapi:8000/streamlit_actions"
 ).json()
 st.session_state["snapshot"] += streamlit_actions
-for actions in st.session_state["snapshot"][:-1]:
+
+for actions in st.session_state["snapshot"]:
     if actions != []:
         for action in actions:
             st.chat_message(
@@ -211,10 +227,10 @@ except:
     st.stop()
 
 
-chatbot_agent = YouTubeChatbot(
+st.session_state["chatbot_agent"] = YouTubeChatbot(
     st.session_state["youtube_agent"].shared_memory
 )
-chatbot_agent.load_model()
+st.session_state["chatbot_agent"].load_model()
 
 
 view_app_graph = st.session_state["view_graph_button_container"].button(
@@ -225,7 +241,7 @@ if view_app_graph:
     view_application_graphs(
         {
             "YouTube Content Search": st.session_state["youtube_agent"].graph,
-            "YouTube Chatbot": chatbot_agent.graph})
+            "YouTube Chatbot": st.session_state["chatbot_agent"].graph})
     
 
 view_neo4j_graph = st.sidebar.button(
@@ -237,5 +253,5 @@ if view_neo4j_graph:
 
 
 if prompt := st.chat_input():
-    chatbot_agent.stream_graph_updates(
+    st.session_state["chatbot_agent"].stream_graph_updates(
         prompt)

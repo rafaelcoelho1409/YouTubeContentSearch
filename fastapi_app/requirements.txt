@@ -1,7 +1,7 @@
 fastapi
 uvicorn
+pydantic
 ipykernel
-python-dotenv
 streamlit
 streamlit_extras
 ollama
@@ -16,12 +16,7 @@ langchain_community
 langchain_experimental
 langchain_neo4j
 pandas
-bs4
-stqdm
 youtube-transcript-api
 youtube-search
 pytubefix
 neo4j
-networkx
-plotly
-pyvis

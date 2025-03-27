@@ -19,7 +19,6 @@ COPY . /app
 # Set the working directory
 WORKDIR /app
 
-RUN mkdir -p assets
 # Expose port 8501 for Streamlit
 EXPOSE 8501
 

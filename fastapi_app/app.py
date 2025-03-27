@@ -1,16 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI
 from typing import List
-from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 import streamlit as st
-import stqdm
 import os
-import uuid
-import re
 import pandas as pd
 import requests
-import json
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
@@ -35,7 +29,6 @@ from langchain_core.runnables import (
 )
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain.text_splitter import TokenTextSplitter
-from langgraph.graph import END, StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
 from neo4j import GraphDatabase
 from pytubefix import YouTube, Channel, Playlist
@@ -287,7 +280,7 @@ def set_model():
         "callbacks": [StreamlitCallbackHandler(st.container())]}
     llm_framework = {
         "Groq": ChatGroq,
-        "Ollama": ChatOllama,
+        #"Ollama": ChatOllama,
         "Google Generative AI": ChatGoogleGenerativeAI,
         "SambaNova": ChatSambaNovaCloud,
         "Scaleway": ChatOpenAI,

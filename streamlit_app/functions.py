@@ -60,19 +60,7 @@ def initialize_shared_memory():
     if "shared_memory" not in st.session_state:
         st.session_state["shared_memory"] = MemorySaver()
 
-def get_unique_elements(lst):
-    seen = set()
-    unique = []
-    for item in lst:
-        if isinstance(item, (list, dict)):
-            # Convert to a hashable type (tuple for lists, frozenset for dicts)
-            hashable_item = tuple(item) if isinstance(item, list) else frozenset(item.items())
-        else:
-            hashable_item = item
-        if hashable_item not in seen:
-            seen.add(hashable_item)
-            unique.append(item)
-    return unique
+
 ###>>>---STREAMLIT FUNCTIONS---<<<###
 @st.dialog("Settings", width = "large")
 def settings():
@@ -337,9 +325,9 @@ def view_neo4j_context_graph():
     # (Optional) Apply a layout algorithm for better visualization.
     pyvis_net.force_atlas_2based()
     # Instead of opening a browser, save the Pyvis network as an HTML file.
-    pyvis_net.save_graph("assets/graph.html")
+    pyvis_net.save_graph("./graph.html")
     # Read the saved HTML file.
-    with open("assets/graph.html", "r", encoding = "utf-8") as f:
+    with open("./graph.html", "r", encoding = "utf-8") as f:
         html_graph = f.read()
     st.title("Interactive Neo4j Graph Visualization")
     # Embed the Pyvis-generated HTML in your Streamlit app.
