@@ -1,0 +1,241 @@
+---
+# ConfigMap for shared environment variables
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shared-env-config
+data:
+  NEO4J_URI: "bolt://neo4j:7687"
+  NEO4J_USERNAME: "neo4j"
+  NEO4J_PASSWORD: "password"
+  FASTAPI_URL: "http://fastapi:8000"
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: neo4j-secret
+type: Opaque
+data:
+  NEO4J_PASSWORD: cGFzc3dvcmQ=  # "password" base64 encoded
+---
+# Neo4J Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo4j-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neo4j
+  template:
+    metadata:
+      labels:
+        app: neo4j
+    spec:
+      containers:
+      - name: neo4j
+        image: youtubecontentsearch-neo4j
+        imagePullPolicy: Never  # <-- This forces Kubernetes to use local images
+        ports:
+        - containerPort: 7474
+        - containerPort: 7687
+        env:
+        - name: MINIKUBE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NEO4J_AUTH
+          value: "neo4j/password"
+        - name: NEO4J_server_config_strict__validation_enabled  
+          value: "false"
+        - name: NEO4J_dbms_config_strict__validation__enabled
+          value: "false"
+        #- name: NEO4J_dbms_connector_http_advertised__address
+        #  value: "neo4j:7474"
+        #- name: NEO4J_dbms_connector_bolt_advertised__address
+        #  value: "neo4j:7687"
+        # Critical fixes for connection issues
+        - name: NEO4J_dbms_env_ignore
+          value: "SERVICE_.*,KUBERNETES_.*"  # Blocks problematic env vars
+        - name: NEO4J_dbms_jvm_additional
+          value: "-Dignore.unrecognized.env.vars=true"
+        # Critical WebSocket/Bolt settings
+        - name: NEO4J_dbms_connector_bolt_advertised__address
+          value: "$(MINIKUBE_IP):31132"
+        - name: NEO4J_dbms_connector_http_advertised__address
+          value: "$(MINIKUBE_IP):30001"
+        # Get Minikube IP through downward API
+        # Use the IP in advertised addresses
+        #- name: NEO4J_dbms_connector_http_advertised__address
+        #  value: "neo4j:7474"  # For internal cluster communication
+        #- name: NEO4J_dbms_connector_bolt_advertised__address
+        #  value: "neo4j:7687"  # For internal cluster communication
+        # External access configuration (for browser)
+        - name: NEO4J_dbms_connector_http_listen__address
+          value: "0.0.0.0:7474"
+        - name: NEO4J_dbms_connector_bolt_listen__address
+          value: "0.0.0.0:7687"
+        - name: NEO4J_dbms_security_http_access_control_allow__origin
+          value: "*"
+---
+# Neo4J Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo4j
+spec:
+  selector:
+    app: neo4j
+  ports:
+    - name: http
+      port: 7474
+      targetPort: 7474
+      nodePort: 30001  # Must be 30000-32767
+    - name: bolt
+      port: 7687
+      targetPort: 7687
+      nodePort: 31132  # Different port for Bolt
+  type: NodePort  # Change from ClusterIP to NodePort
+---
+# FastAPI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+      - name: fastapi
+        image: youtubecontentsearch-fastapi
+        imagePullPolicy: Never  # <-- This forces Kubernetes to use local images
+        ports:
+        - containerPort: 8000
+        env:
+        - name: HOST
+          value: "0.0.0.0"
+        - name: NEO4J_URI
+          value: "bolt://neo4j:7687"  # Not HTTP
+        - name: NEO4J_USERNAME
+          value: "neo4j"
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neo4j-secret
+              key: NEO4J_PASSWORD
+---
+# FastAPI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi
+spec:
+  selector:
+    app: fastapi
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30002 
+  type: NodePort
+---
+# Streamlit Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamlit
+  template:
+    metadata:
+      labels:
+        app: streamlit
+    spec:
+      containers:
+      - name: streamlit
+        image: youtubecontentsearch-streamlit
+        imagePullPolicy: Never  # <-- This forces Kubernetes to use local images
+        ports:
+        - containerPort: 8501
+        env:
+        - name: FASTAPI_URL
+          valueFrom:
+            configMapKeyRef:
+              name: shared-env-config
+              key: FASTAPI_URL
+        - name: NEO4J_URI
+          valueFrom:
+            configMapKeyRef:
+              name: shared-env-config
+              key: NEO4J_URI
+        - name: NEO4J_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: shared-env-config
+              key: NEO4J_USERNAME
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neo4j-secret
+              key: NEO4J_PASSWORD
+---
+# Streamlit Service (exposed externally)
+apiVersion: v1
+kind: Service
+metadata:
+  name: streamlit
+spec:
+  selector:
+    app: streamlit
+  ports:
+    - port: 8501
+      targetPort: 8501
+      nodePort: 30003  # Changed from default
+  type: NodePort
+---
+# MLflow Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+      - name: mlflow
+        image: youtubecontentsearch-mlflow
+        imagePullPolicy: Never  # <-- This forces Kubernetes to use local images
+        ports:
+        - containerPort: 5000
+---
+# MLflow Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+spec:
+  selector:
+    app: mlflow
+  ports:
+    - port: 5000
+      targetPort: 5000 #Internal communication
+      nodePort: 30004 #External communication
+  type: NodePort

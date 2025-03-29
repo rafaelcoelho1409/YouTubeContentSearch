@@ -38,19 +38,18 @@ services:
   # Neo4j Service (for future use)
   neo4j:
     build:
-      context: ./neo4j  # Path to your Neo4j Dockerfile directory
+      context: ./neo4j_app  # Path to your Neo4j Dockerfile directory
       dockerfile: Dockerfile.neo4j
     container_name: neo4j
     environment:
-      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
       - NEO4J_AUTH=neo4j/password
     ports:
       - "7474:7474"
       - "7687:7687"
     volumes:
-      - neo4j_data:/data
-      - ./neo4j/plugins:/var/lib/neo4j/plugins  # Persistent plugin storage
-      - ./neo4j/conf:/var/lib/neo4j/conf  # Persistent config storage
+      - ./neo4j_app:/app
+      #- ./neo4j_app/plugins:/var/lib/neo4j/plugins  # Persistent plugin storage
+      #- ./neo4j_app/conf:/var/lib/neo4j/conf  # Persistent config storage
     networks:
       - my_network
   mlflow:
