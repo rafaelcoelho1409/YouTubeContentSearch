@@ -1,8 +1,12 @@
+#commands to run on Minikube
 minikube start
 eval $(minikube docker-env)
 docker compose build
 kubectl apply -f k8s-manifest-minikube.yml
 minikube dashboard
+
+#commands to run on Docker compose
+docker compose up --build
 
 
 #export DOCKER_HOST=unix:///var/run/docker.sock
