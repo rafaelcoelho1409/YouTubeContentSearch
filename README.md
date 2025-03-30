@@ -1,6 +1,6 @@
 ![YouTube Content Search](assets/YouTubeContentSearch_logo.png)
 # YouTube Content Search
-Demonstration: [YouTube Content Search Presentation](https://rafaelcoelho1409.github.io/uploads/YouTubeContentSearch.pdf)
+Demonstration: [YouTube Content Search Presentation](https://rafaelcoelho1409.github.io/uploads/YouTubeContentSearch.pdf)  
 Author: Rafael Coelho ([Portfolio Website](https://rafaelcoelho1409.github.io)) 
 
 <br><br>
