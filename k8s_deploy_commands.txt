@@ -1,0 +1,32 @@
+#commands to run on Minikube
+minikube start
+eval $(minikube docker-env)
+docker compose build
+kubectl apply -f k8s-manifest-minikube.yml
+minikube dashboard
+minikube service <service-name>
+
+#commands to run on Docker compose
+docker compose up --build
+
+#commands to run on K3D
+docker compose build
+k3d cluster create mycluster --api-port 6443 --port "30001:30001@loadbalancer" --port "31132:31132@loadbalancer" --port "30002:30002@loadbalancer" --port "30003:30003@loadbalancer" --port "30004:30004@loadbalancer" --agents 1
+kubectl cluster-info
+k3d image import youtubecontentsearch-neo4j -c mycluster
+k3d image import youtubecontentsearch-fastapi -c mycluster
+k3d image import youtubecontentsearch-streamlit -c mycluster
+k3d image import youtubecontentsearch-mlflow -c mycluster
+kubectl apply -f k8s-manifest-k3d.yml
+#checking images into k3d
+docker exec k3d-mycluster-server-0 crictl images
+#Kubernetes dashboard
+helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard --create-namespace --namespace kubernetes-dashboard
+kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+kubectl create serviceaccount kubernetes-dashboard
+kubectl create token kubernetes-dashboard
+kubectl -n NAMESPACE create token SERVICE_ACCOUNT #or: kubectl -n default create token kubernetes-dashboard
+
+---
+#export DOCKER_HOST=unix:///var/run/docker.sock

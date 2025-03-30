@@ -175,7 +175,7 @@ class YouTubeContentSearch:
             streamlit_actions += [streamlit_action]
         else:
             unique_videos = {
-                "video_id": search_results_dict[self.video_url]["video_id"]
+                "video_id": search_results_dict[model_config["video_url"]]["video_id"]
             }
         requests.put(
             "http://fastapi:8000/streamlit_actions",
