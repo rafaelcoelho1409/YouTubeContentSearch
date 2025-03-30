@@ -30,13 +30,18 @@ YouTube Content Search allows you to use 4 different APIs services to function w
 **A) Running through Docker Compose**  
 
 A.1) [Install Docker](https://docs.docker.com/get-started/get-docker/)  
+
 A.2) [Install Docker Compose](https://docs.docker.com/compose/install/)  
+
 A.3) Clone this repository:  
 > git clone https://github.com/rafaelcoelho1409/YouTubeContentSearch  
+
 A.4) Enter this repository folder:  
 > cd YouTubeContentSearch
+
 A.5) Run Docker Compose to start the services:  
 > docker compose up --build  
+
 A.6) After all services started, you can access each of them by accessing the following local addresses:  
     - Streamlit: http://localhost:8501  
     - FastAPI: http://localhost:8000/docs  
@@ -46,30 +51,42 @@ A.6) After all services started, you can access each of them by accessing the fo
   
 **B) Running through Kubernetes and Minikube**  
 B.1) [Install Docker](https://docs.docker.com/get-started/get-docker/)  
+
 B.2) [Install Kubernetes](https://kubernetes.io/docs/setup/)  
+
 B.3) [Install Minikube](https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download)  
+
 B.4) Clone this repository:
-> git clone https://github.com/rafaelcoelho1409/YouTubeContentSearch
+> git clone https://github.com/rafaelcoelho1409/YouTubeContentSearch  
+
 B.5) Enter this repository folder:  
 > cd YouTubeContentSearch    
+
 B.6) Start Minikube nodes:  
 > minikube start  
+
 B.7) Start Docker into Minikube:  
 > eval $(minikube docker-env)  
+
 B.8) Build all Docker images from each Dockerfile into the folders, without start them:  
 > docker compose build  
+
 B.9) Apply Kubernetes manifest to run all services on Minikube through Kubernetes:  
 > kubectl apply -f k8s-manifest-minikube.yml  
+
 B.10) You can monitor the Kubernetes Pods deployment and services running with Minikube Dashboard (open another terminal to run this command):  
 > minikube dashboard  
+
 B.11) Before accessing all the deployed services, you must get your local Minikube IP:  
 > minikube ip  
+
 B.12) With your local Minikube IP, after all services started, you can access each of them by accessing the following local addresses:  
     - Streamlit: http://<minikube-ip>:30003  
     - FastAPI: http://<minikube-ip>:30002/docs  
     - MLflow: http://<minikube-ip>:30004  
     - Neo4J: http://<minikube-ip>:30001  
-B.14) If you prefer, you can open each service using Minikube service command:  
+
+B.13) If you prefer, you can open each service using Minikube service command:  
     - Streamlit: minikube service streamlit  
     - FastAPI: minikube service fastapi  
     - MLflow: minikube service mlflow  
