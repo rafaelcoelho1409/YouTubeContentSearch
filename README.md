@@ -31,12 +31,12 @@ YouTube Content Search allows you to use 4 different APIs services to function w
 
 A.1) [Install Docker](https://docs.docker.com/get-started/get-docker/)  
 A.2) [Install Docker Compose](https://docs.docker.com/compose/install/)  
-A.3) Clone this repository:
-> git clone https://github.com/rafaelcoelho1409/YouTubeContentSearch
+A.3) Clone this repository:  
+> git clone https://github.com/rafaelcoelho1409/YouTubeContentSearch  
 A.4) Enter this repository folder:  
-> cd COELHOAgents  
+> cd YouTubeContentSearch
 A.5) Run Docker Compose to start the services:  
-> docker compose up --build
+> docker compose up --build  
 A.6) After all services started, you can access each of them by accessing the following local addresses:  
     - Streamlit: http://localhost:8501  
     - FastAPI: http://localhost:8000/docs  
@@ -51,7 +51,7 @@ B.3) [Install Minikube](https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2
 B.4) Clone this repository:
 > git clone https://github.com/rafaelcoelho1409/YouTubeContentSearch
 B.5) Enter this repository folder:  
-> cd COELHOAgents  
+> cd YouTubeContentSearch    
 B.6) Start Minikube nodes:  
 > minikube start  
 B.7) Start Docker into Minikube:  
@@ -60,7 +60,7 @@ B.8) Build all Docker images from each Dockerfile into the folders, without star
 > docker compose build  
 B.9) Apply Kubernetes manifest to run all services on Minikube through Kubernetes:  
 > kubectl apply -f k8s-manifest-minikube.yml  
-B.10) You can monitor the Kubernetes Pods deployment and services running with Minikube Dashboard:  
+B.10) You can monitor the Kubernetes Pods deployment and services running with Minikube Dashboard (open another terminal to run this command):  
 > minikube dashboard  
 B.11) Before accessing all the deployed services, you must get your local Minikube IP:  
 > minikube ip  
@@ -70,7 +70,7 @@ B.12) With your local Minikube IP, after all services started, you can access ea
     - MLflow: http://<minikube-ip>:30004  
     - Neo4J: http://<minikube-ip>:30001  
 B.14) If you prefer, you can open each service using Minikube service command:  
-    - Streamlit: minikube service streamlit
-    - FastAPI: minikube service fastapi 
-    - MLflow: minikube service mlflow 
-    - Neo4J: minikube service neo4j 
+    - Streamlit: minikube service streamlit  
+    - FastAPI: minikube service fastapi  
+    - MLflow: minikube service mlflow  
+    - Neo4J: minikube service neo4j  
