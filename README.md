@@ -1,6 +1,7 @@
 ![YouTube Content Search](assets/YouTubeContentSearch_logo.png)
 # YouTube Content Search
 Demonstration: [YouTube Content Search Presentation](https://rafaelcoelho1409.github.io/uploads/YouTubeContentSearch.pdf)
+Author: Rafael Coelho ([Portfolio Website](https://rafaelcoelho1409.github.io)) 
 
 <br><br>
 <b>YouTube Content Search</b> is a platform that leverages the power of AI Agents using LangChain and LangGraph to get important informations from YouTube videos, by extracting relationships between entities (Knowledge Graph) identified from video transcriptions and by storing these informations into a Graph Database called Neo4J.<br><br>
