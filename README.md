@@ -80,11 +80,11 @@ B.10) You can monitor the Kubernetes Pods deployment and services running with M
 B.11) Before accessing all the deployed services, you must get your local Minikube IP:  
 > minikube ip  
 
-B.12) With your local Minikube IP, after all services started, you can access each of them by accessing the following local addresses:  
-    - Streamlit: http://<minikube-ip>:30003  
-    - FastAPI: http://<minikube-ip>:30002/docs  
-    - MLflow: http://<minikube-ip>:30004  
-    - Neo4J: http://<minikube-ip>:30001  
+B.12) With your local Minikube IP, after all services started, you can access each of them by accessing the following local addresses (replace <|minikube-ip|> for the IP you got from minikube ip command):  
+    - Streamlit: http://<|minikube-ip|>:30003  
+    - FastAPI: http://<|minikube-ip|>:30002/docs  
+    - MLflow: http://<|minikube-ip|>:30004  
+    - Neo4J: http://<|minikube-ip|>:30001  
 
 B.13) If you prefer, you can open each service using Minikube service command:  
     - Streamlit: minikube service streamlit  
